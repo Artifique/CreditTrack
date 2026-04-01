@@ -1,8 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../controllers/transaction_controller.dart';
+import '../../models/transaction_model.dart';
 
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
+
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  final _transactionController = TransactionController();
+  final _searchController = TextEditingController();
+  String _categoryFilter = "Tout";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +35,15 @@ class HistoryPage extends StatelessWidget {
         children: [
           _buildSearchBar(),
           _buildFilterChips(),
-          Expanded(child: _buildTransactionList()),
+          Expanded(
+            child: StreamBuilder<List<TransactionModel>>(
+              stream: _transactionController.transactionStream,
+              builder: (context, snapshot) {
+                final list = _applyFilters(snapshot.data ?? []);
+                return _buildTransactionList(list);
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -28,6 +53,8 @@ class HistoryPage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: TextField(
+        controller: _searchController,
+        onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
           hintText: "Rechercher un client ou un numéro...",
           prefixIcon: const Icon(Icons.search_rounded),
@@ -48,22 +75,34 @@ class HistoryPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _FilterChip(label: "Tout", isSelected: true),
-          _FilterChip(label: "Orange Money", isSelected: false),
-          _FilterChip(label: "Wave", isSelected: false),
-          _FilterChip(label: "Crédit", isSelected: false),
-          _FilterChip(label: "Aujourd'hui", isSelected: false),
+          _FilterChip(label: "Tout", isSelected: _categoryFilter == "Tout", onTap: () => setState(() => _categoryFilter = "Tout")),
+          _FilterChip(label: "UV", isSelected: _categoryFilter == "UV", onTap: () => setState(() => _categoryFilter = "UV")),
+          _FilterChip(label: "CREDIT", isSelected: _categoryFilter == "CREDIT", onTap: () => setState(() => _categoryFilter = "CREDIT")),
         ],
       ),
     );
   }
 
-  Widget _buildTransactionList() {
+  List<TransactionModel> _applyFilters(List<TransactionModel> transactions) {
+    return transactions.where((tx) {
+      final bySearch = _searchController.text.trim().isEmpty ||
+          tx.clientName.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          tx.clientPhone.contains(_searchController.text.trim());
+      final byCategory = _categoryFilter == "Tout" || tx.category.name == _categoryFilter;
+      return bySearch && byCategory;
+    }).toList();
+  }
+
+  Widget _buildTransactionList(List<TransactionModel> transactions) {
+    if (transactions.isEmpty) {
+      return const Center(child: Text("Aucune transaction trouvée."));
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(20),
-      itemCount: 10,
+      itemCount: transactions.length,
       itemBuilder: (context, index) {
-        return _TransactionHistoryItem(index: index);
+        return _TransactionHistoryItem(transaction: transactions[index]);
       },
     );
   }
@@ -72,8 +111,9 @@ class HistoryPage extends StatelessWidget {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
+  final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.isSelected});
+  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +122,7 @@ class _FilterChip extends StatelessWidget {
       child: FilterChip(
         label: Text(label),
         selected: isSelected,
-        onSelected: (val) {},
+        onSelected: (val) => onTap(),
         backgroundColor: Colors.white,
         selectedColor: AppColors.primary.withOpacity(0.2),
         labelStyle: TextStyle(
@@ -97,11 +137,13 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _TransactionHistoryItem extends StatelessWidget {
-  final int index;
-  const _TransactionHistoryItem({required this.index});
+  final TransactionModel transaction;
+  const _TransactionHistoryItem({required this.transaction});
 
   @override
   Widget build(BuildContext context) {
+    final isPositive =
+        transaction.type == TransactionType.retrait || transaction.type == TransactionType.achat;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -115,12 +157,12 @@ class _TransactionHistoryItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: index % 2 == 0 ? Colors.green.shade50 : Colors.red.shade50,
+              color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              index % 2 == 0 ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
-              color: index % 2 == 0 ? Colors.green : Colors.red,
+              isPositive ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+              color: isPositive ? Colors.green : Colors.red,
             ),
           ),
           const SizedBox(width: 16),
@@ -128,8 +170,11 @@ class _TransactionHistoryItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Client #$index", style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("24 Mars 2026 • 14:30", style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                Text(transaction.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}",
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -137,14 +182,14 @@ class _TransactionHistoryItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "${index % 2 == 0 ? '+' : '-'} 2 500 F",
+                "${isPositive ? '+' : '-'} ${transaction.amount.toStringAsFixed(0)} F",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: index % 2 == 0 ? Colors.green : Colors.red,
+                  color: isPositive ? Colors.green : Colors.red,
                   fontSize: 16,
                 ),
               ),
-              const Text("Orange Money", style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+              Text(transaction.category.name, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
             ],
           ),
         ],

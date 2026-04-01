@@ -16,10 +16,17 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
 
   void _handleSignIn() async {
+    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email et mot de passe requis."), backgroundColor: Colors.red),
+      );
+      return;
+    }
     setState(() => _isLoading = true);
     try {
       await _authController.signIn(_emailController.text, _passwordController.text);
-      // Navigation vers le dashboard si succès
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
@@ -27,6 +34,13 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override

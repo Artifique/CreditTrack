@@ -16,8 +16,8 @@ void main() async {
 
   // Initialisation Supabase (remplacez par vos clés)
   await Supabase.initialize(
-    url: 'https://VOTRE_PROJET.supabase.co',
-    anonKey: 'VOTRE_ANON_KEY',
+    url: 'https://dcirsmtvrtiekfxhjtvo.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXJzbXR2cnRpZWtmeGhqdHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ5OTcsImV4cCI6MjA5MDYyMDk5N30.asGxG9RsACj_mLzl782dk8EBST5QAIavlHVWnOrQ64I',
   );
 
   runApp(const CreditTrakApp());
@@ -32,7 +32,7 @@ class CreditTrakApp extends StatelessWidget {
       title: 'CreditTrak',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      initialRoute: '/dashboard',
+      home: const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginPage(),
         '/signup': (context) => const SignUpPage(),
@@ -43,6 +43,26 @@ class CreditTrakApp extends StatelessWidget {
         '/settings-business': (context) => const BusinessProfilePage(),
         '/settings-printer': (context) => const PrinterSettingsPage(),
         '/reports': (context) => const ReportsPage(),
+      },
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final supabase = Supabase.instance.client;
+
+    return StreamBuilder<AuthState>(
+      stream: supabase.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        final session = supabase.auth.currentSession;
+        if (session != null) {
+          return const DashboardPage();
+        }
+        return const LoginPage();
       },
     );
   }

@@ -1,51 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/theme.dart';
+import '../../controllers/transaction_controller.dart';
+import '../../models/profile_model.dart';
+import '../../models/transaction_model.dart';
 import 'widgets/activity_chart.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final _transactionController = TransactionController();
+  late Future<ProfileModel?> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _transactionController.getProfileData();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildBalanceCards(),
-                  const SizedBox(height: 32),
-                  const ActivityChart(), // Nouveau : Affichage du graphique d'activité
-                  const SizedBox(height: 32),
-                  _buildSectionTitle("Opérations Rapides"),
-                  const SizedBox(height: 16),
-                  _buildQuickActions(context),
-                  const SizedBox(height: 32),
-                  _buildSectionTitle("Transactions Récentes"),
-                  const SizedBox(height: 16),
-                  _buildRecentTransactions(),
+    return FutureBuilder<ProfileModel?>(
+      future: _profileFuture,
+      builder: (context, profileSnapshot) {
+        final profile = profileSnapshot.data;
+        return StreamBuilder<List<TransactionModel>>(
+          stream: _transactionController.transactionStream,
+          builder: (context, txSnapshot) {
+            final transactions = txSnapshot.data ?? [];
+            final totalProfit = transactions.fold<double>(0, (sum, tx) => sum + tx.commission);
+
+            return Scaffold(
+              body: CustomScrollView(
+                slivers: [
+                  _buildAppBar(profile),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildBalanceCards(profile, totalProfit),
+                          const SizedBox(height: 32),
+                          ActivityChart(transactions: transactions),
+                          const SizedBox(height: 32),
+                          _buildSectionTitle("Opérations Rapides"),
+                          const SizedBox(height: 16),
+                          _buildQuickActions(context),
+                          const SizedBox(height: 32),
+                          _buildSectionTitle("Transactions Récentes"),
+                          const SizedBox(height: 16),
+                          _buildRecentTransactions(transactions),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(context),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/new-transaction'),
-        backgroundColor: AppColors.primary,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white, size: 30),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+              bottomNavigationBar: _buildBottomNav(context),
+              floatingActionButton: FloatingActionButton(
+                onPressed: () => Navigator.pushNamed(context, '/new-transaction'),
+                backgroundColor: AppColors.primary,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.add, color: Colors.white, size: 30),
+              ),
+              floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(ProfileModel? profile) {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
@@ -61,7 +93,8 @@ class DashboardPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Bonjour,", style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                Text("Aly Toure", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text(profile?.ownerName ?? profile?.businessName ?? "Commerçant",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
               ],
             ),
             GestureDetector(
@@ -77,28 +110,28 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceCards() {
+  Widget _buildBalanceCards(ProfileModel? profile, double totalProfit) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           _BalanceCard(
             title: "Solde UV",
-            amount: "450 000",
+            amount: _formatAmount(profile?.soldeUv ?? 0),
             gradient: AppColors.cardGradientUV,
             icon: Icons.account_balance_wallet_outlined,
           ),
           const SizedBox(width: 16),
           _BalanceCard(
             title: "Solde Crédit",
-            amount: "75 500",
+            amount: _formatAmount(profile?.soldeCredit ?? 0),
             gradient: AppColors.cardGradientCredit,
             icon: Icons.phone_android_outlined,
           ),
           const SizedBox(width: 16),
           _BalanceCard(
             title: "Bénéfice Total", // NOUVEAU v1.1
-            amount: "12 450",
+            amount: _formatAmount(totalProfit),
             gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]), // Orange Ambre
             icon: Icons.trending_up_rounded,
           ),
@@ -146,12 +179,19 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentTransactions() {
+  Widget _buildRecentTransactions(List<TransactionModel> transactions) {
+    if (transactions.isEmpty) {
+      return const Text("Aucune transaction pour le moment.");
+    }
+
+    final recent = transactions.take(3).toList();
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: 3,
+      itemCount: recent.length,
       itemBuilder: (context, index) {
+        final tx = recent[index];
+        final isPositive = tx.type == TransactionType.retrait || tx.type == TransactionType.achat;
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -165,25 +205,34 @@ class DashboardPage extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
-                child: Icon(Icons.arrow_upward_rounded, color: AppColors.primary),
+                child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded, color: AppColors.primary),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Dépôt Orange Money", style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text("Client: Moussa Diop", style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text(tx.type.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text("Client: ${tx.clientName}",
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                   ],
                 ),
               ),
-              const Text("- 5 000 F", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+              Text(
+                "${isPositive ? '+' : '-'} ${_formatAmount(tx.amount)} F",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isPositive ? Colors.green : Colors.redAccent,
+                ),
+              ),
             ],
           ),
         );
       },
     );
   }
+
+  String _formatAmount(double amount) => NumberFormat('#,##0', 'fr_FR').format(amount);
 
   Widget _buildBottomNav(BuildContext context) {
     return BottomAppBar(

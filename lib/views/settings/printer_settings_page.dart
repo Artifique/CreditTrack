@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import '../../core/theme.dart';
+import '../../services/bluetooth_service.dart';
 
 class PrinterSettingsPage extends StatefulWidget {
   const PrinterSettingsPage({super.key});
@@ -10,6 +12,20 @@ class PrinterSettingsPage extends StatefulWidget {
 
 class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
   bool _isSearching = false;
+  final _bluetoothService = BluetoothPrinterService();
+  List<BluetoothDevice> _devices = [];
+  BluetoothDevice? _connectedDevice;
+
+  Future<void> _scanDevices() async {
+    setState(() => _isSearching = true);
+    try {
+      final list = await _bluetoothService.getDevices();
+      if (!mounted) return;
+      setState(() => _devices = list);
+    } finally {
+      if (mounted) setState(() => _isSearching = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,16 +81,29 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
   }
 
   Widget _buildDeviceList() {
+    if (_devices.isEmpty) {
+      return const Center(child: Text("Aucun appareil trouvé. Lance une recherche."));
+    }
+
     return ListView.builder(
-      itemCount: 3,
+      itemCount: _devices.length,
       itemBuilder: (context, index) {
+        final device = _devices[index];
+        final isConnected = _connectedDevice?.address == device.address;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
             leading: const Icon(Icons.print_rounded, color: AppColors.primary),
-            title: Text("Imprimante Thermique #$index"),
-            subtitle: const Text("Non connecté"),
-            trailing: TextButton(onPressed: () {}, child: const Text("Connecter")),
+            title: Text(device.name ?? "Imprimante inconnue"),
+            subtitle: Text(isConnected ? "Connecté" : "Non connecté"),
+            trailing: TextButton(
+              onPressed: () async {
+                await _bluetoothService.connect(device);
+                if (!mounted) return;
+                setState(() => _connectedDevice = device);
+              },
+              child: Text(isConnected ? "Connecté" : "Connecter"),
+            ),
           ),
         );
       },
@@ -86,9 +115,9 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
       width: double.infinity,
       height: 60,
       child: ElevatedButton.icon(
-        onPressed: () => setState(() => _isSearching = !_isSearching),
+        onPressed: _isSearching ? null : _scanDevices,
         icon: Icon(_isSearching ? Icons.stop_rounded : Icons.search_rounded, color: Colors.white),
-        label: Text(_isSearching ? "Arrêter le scan" : "Rechercher une imprimante", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(_isSearching ? "Recherche..." : "Rechercher une imprimante", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
       ),
     );

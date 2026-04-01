@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/profile_model.dart';
 import '../models/transaction_model.dart';
 
 class TransactionController {
@@ -14,9 +15,9 @@ class TransactionController {
   }
 
   // Récupérer le profil (et donc les soldes) de l'utilisateur
-  Future<Map<String, dynamic>> getProfileData() async {
+  Future<ProfileModel?> getProfileData() async {
     final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) return {};
+    if (userId == null) return null;
 
     final response = await _supabase
         .from('profiles')
@@ -24,7 +25,7 @@ class TransactionController {
         .eq('id', userId)
         .single();
     
-    return response;
+    return ProfileModel.fromJson(response);
   }
 
   // Ajouter une nouvelle transaction
@@ -34,6 +35,20 @@ class TransactionController {
     } catch (e) {
       throw Exception("Erreur lors de l'ajout de la transaction : $e");
     }
+  }
+
+  Future<List<TransactionModel>> getTransactions({int limit = 100}) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    final response = await _supabase
+        .from('transactions')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
   }
 
   // Calculer les statistiques simples pour le dashboard

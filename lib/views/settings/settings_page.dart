@@ -1,68 +1,111 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../controllers/auth_controller.dart';
+import '../../controllers/settings_controller.dart';
+import '../../models/business_settings_model.dart';
+import '../../models/profile_model.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
   @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  final _settingsController = SettingsController();
+  final _authController = AuthController();
+  late Future<ProfileModel?> _profileFuture;
+  late Future<BusinessSettingsModel> _settingsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _settingsController.getProfile();
+    _settingsFuture = _settingsController.getBusinessSettings();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Paramètres", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildProfileSection(),
-            const SizedBox(height: 32),
-            _buildSettingsSection(
-              "Commerce",
-              [
-                _SettingsTile(
-                  icon: Icons.storefront_rounded, 
-                  title: "Profil du commerce", 
-                  value: "Toure Registre",
-                  onTap: () => Navigator.pushNamed(context, '/settings-business'),
+    return FutureBuilder<ProfileModel?>(
+      future: _profileFuture,
+      builder: (context, profileSnapshot) {
+        return FutureBuilder<BusinessSettingsModel>(
+          future: _settingsFuture,
+          builder: (context, settingsSnapshot) {
+            final profile = profileSnapshot.data;
+            final settings = settingsSnapshot.data ?? BusinessSettingsModel.empty;
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text("Paramètres", style: TextStyle(fontWeight: FontWeight.bold)),
+                centerTitle: true,
+              ),
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildProfileSection(profile),
+                    const SizedBox(height: 32),
+                    _buildSettingsSection(
+                      "Commerce",
+                      [
+                        _SettingsTile(
+                          icon: Icons.storefront_rounded,
+                          title: "Profil du commerce",
+                          value: profile?.businessName ?? "-",
+                          onTap: () => Navigator.pushNamed(context, '/settings-business'),
+                        ),
+                        _SettingsTile(
+                          icon: Icons.phone_android_rounded,
+                          title: "Téléphone",
+                          value: profile?.phoneNumber ?? "-",
+                          onTap: () => Navigator.pushNamed(context, '/settings-business'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSettingsSection(
+                      "Imprimante & Bluetooth",
+                      [
+                        _SettingsTile(
+                          icon: Icons.print_rounded,
+                          title: "Format & Appareil",
+                          value: settings.autoPrintReceipt ? "Impression auto activée" : "Impression auto désactivée",
+                          onTap: () => Navigator.pushNamed(context, '/settings-printer'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSettingsSection(
+                      "Préférences",
+                      [
+                        _SettingsTile(
+                          icon: Icons.language_rounded,
+                          title: "Langue",
+                          value: settings.language == 'fr' ? "Français" : settings.language.toUpperCase(),
+                          onTap: () {},
+                        ),
+                        _SettingsTile(
+                          icon: Icons.dark_mode_rounded,
+                          title: "Mode Sombre",
+                          value: settings.darkMode ? "Activé" : "Désactivé",
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+                    _buildLogoutButton(context),
+                  ],
                 ),
-                _SettingsTile(
-                  icon: Icons.phone_android_rounded, 
-                  title: "Téléphone", 
-                  value: "+221 77 123 45 67",
-                  onTap: () => Navigator.pushNamed(context, '/settings-business'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildSettingsSection(
-              "Imprimante & Bluetooth",
-              [
-                _SettingsTile(
-                  icon: Icons.print_rounded, 
-                  title: "Format & Appareil", 
-                  value: "MPT-II (58mm)",
-                  onTap: () => Navigator.pushNamed(context, '/settings-printer'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildSettingsSection(
-              "Préférences",
-              [
-                _SettingsTile(icon: Icons.language_rounded, title: "Langue", value: "Français", onTap: () {}),
-                _SettingsTile(icon: Icons.dark_mode_rounded, title: "Mode Sombre", value: "Désactivé", onTap: () {}),
-              ],
-            ),
-            const SizedBox(height: 40),
-            _buildLogoutButton(context),
-          ],
-        ),
-      ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildProfileSection() {
+  Widget _buildProfileSection(ProfileModel? profile) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -80,8 +123,8 @@ class SettingsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Aly Toure",
+                Text(
+                  profile?.ownerName ?? profile?.businessName ?? "Utilisateur",
                   style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
@@ -126,7 +169,11 @@ class SettingsPage extends StatelessWidget {
 
   Widget _buildLogoutButton(BuildContext context) {
     return TextButton.icon(
-      onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+      onPressed: () async {
+        await _authController.signOut();
+        if (!context.mounted) return;
+        Navigator.pushReplacementNamed(context, '/login');
+      },
       icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
       label: const Text("Déconnexion", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
     );

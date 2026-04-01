@@ -19,13 +19,26 @@ class AuthController {
   }
 
   // Inscription et création automatique du profil
-  Future<AuthResponse> signUp(String email, String password, String businessName) async {
+  Future<AuthResponse> signUp(
+    String email,
+    String password,
+    String businessName, {
+    String? ownerName,
+  }) async {
     try {
       final response = await _supabase.auth.signUp(
         email: email,
         password: password,
         data: {'business_name': businessName},
       );
+      final userId = response.user?.id;
+      if (userId != null) {
+        await _supabase.from('profiles').upsert({
+          'id': userId,
+          'business_name': businessName,
+          if (ownerName != null && ownerName.trim().isNotEmpty) 'owner_name': ownerName.trim(),
+        });
+      }
       return response;
     } catch (e) {
       throw Exception("Erreur d'inscription : $e");

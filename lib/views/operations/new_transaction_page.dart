@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
+import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
 
 class NewTransactionPage extends StatefulWidget {
@@ -11,15 +13,74 @@ class NewTransactionPage extends StatefulWidget {
 
 class _NewTransactionPageState extends State<NewTransactionPage> {
   final _formKey = GlobalKey<FormState>();
+  final _clientNameController = TextEditingController();
+  final _clientPhoneController = TextEditingController();
   final _amountController = TextEditingController();
+  final _transactionController = TransactionController();
   String _selectedCategory = 'UV';
   TransactionType _selectedType = TransactionType.depot;
   double _estimatedCommission = 0;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
     super.initState() ;
     _amountController.addListener(_updateCommission);
+  }
+
+  @override
+  void dispose() {
+    _clientNameController.dispose();
+    _clientPhoneController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitTransaction() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Session expirée. Reconnecte-toi."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
+    if (_clientNameController.text.trim().isEmpty ||
+        _clientPhoneController.text.trim().isEmpty ||
+        amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Complète les champs requis."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final transaction = TransactionModel(
+      userId: userId,
+      type: _selectedType,
+      category: _selectedCategory == 'UV' ? TransactionCategory.UV : TransactionCategory.CREDIT,
+      clientName: _clientNameController.text.trim(),
+      clientPhone: _clientPhoneController.text.trim(),
+      amount: amount,
+      commission: _estimatedCommission,
+      soldeApres: 0,
+      note: null,
+      createdAt: DateTime.now(),
+    );
+
+    setState(() => _isSubmitting = true);
+    try {
+      await _transactionController.addTransaction(transaction);
+      if (!mounted) return;
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _updateCommission() {
@@ -53,6 +114,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                 label: "Nom du Client",
                 hint: "ex: Moussa Diop",
                 icon: Icons.person_outline_rounded,
+                controller: _clientNameController,
               ),
               const SizedBox(height: 20),
               _buildInputField(
@@ -60,6 +122,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                 hint: "77 000 00 00",
                 icon: Icons.phone_android_rounded,
                 keyboardType: TextInputType.phone,
+                controller: _clientPhoneController,
               ),
               const SizedBox(height: 20),
               _buildInputField(
@@ -206,16 +269,18 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: ElevatedButton(
-        onPressed: () => _showSuccessDialog(),
+        onPressed: _isSubmitting ? null : _submitTransaction,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
-        child: const Text(
-          "Valider l'Opération",
-          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
+        child: _isSubmitting
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                "Valider l'Opération",
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
       ),
     );
   }

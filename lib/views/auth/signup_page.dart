@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
-import 'login_page.dart';
+import '../../controllers/auth_controller.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -14,6 +14,51 @@ class _SignUpPageState extends State<SignUpPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authController = AuthController();
+  bool _isLoading = false;
+
+  Future<void> _handleSignUp() async {
+    if (_businessController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nom commerce, email et mot de passe sont requis."), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await _authController.signUp(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _businessController.text.trim(),
+        ownerName: _nameController.text.trim(),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Compte créé avec succès."), backgroundColor: Colors.green),
+      );
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _businessController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,12 +123,11 @@ class _SignUpPageState extends State<SignUpPage> {
         boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
       ),
       child: ElevatedButton(
-        onPressed: () {
-          // Navigation directe pour la démo
-          Navigator.pushReplacementNamed(context, '/dashboard');
-        },
+        onPressed: _isLoading ? null : _handleSignUp,
         style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-        child: const Text("Créer mon compte", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text("Créer mon compte", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
       ),
     );
   }
