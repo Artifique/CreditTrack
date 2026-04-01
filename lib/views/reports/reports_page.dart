@@ -1,11 +1,22 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../services/pdf_service.dart';
 
-class ReportsPage extends StatelessWidget {
+class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
+
+  @override
+  State<ReportsPage> createState() => _ReportsPageState();
+}
+
+class _ReportsPageState extends State<ReportsPage> {
+  final _pdfService = PdfService();
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +45,7 @@ class ReportsPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 _buildWeeklyBarChart(txs),
                 const SizedBox(height: 32),
-                _buildExportSection(),
+                _buildExportSection(txs),
               ],
             ),
           ),
@@ -165,15 +176,55 @@ class ReportsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildExportSection() {
+  Future<void> _exportPdf(List<TransactionModel> txs) async {
+    if (txs.isEmpty) {
+      await UserFeedback.showErrorModal(context, Exception("Aucune transaction à exporter."));
+      return;
+    }
+    final file = await _pdfService.generateReport(txs, "Rapport CreditTrack");
+    if (!mounted) return;
+    await UserFeedback.showSuccessModal(context, "PDF exporté: ${file.path}");
+  }
+
+  Future<void> _exportCsv(List<TransactionModel> txs) async {
+    if (txs.isEmpty) {
+      await UserFeedback.showErrorModal(context, Exception("Aucune transaction à exporter."));
+      return;
+    }
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/rapport_credit_trak.csv');
+    final buffer = StringBuffer('date,type,categorie,telephone,montant,commission\n');
+    for (final tx in txs) {
+      buffer.writeln(
+        '${tx.createdAt.toIso8601String()},${tx.type.name},${tx.category.name},${tx.clientPhone},${tx.amount},${tx.commission}',
+      );
+    }
+    await file.writeAsString(buffer.toString());
+    if (!mounted) return;
+    await UserFeedback.showSuccessModal(context, "CSV exporté: ${file.path}");
+  }
+
+  Widget _buildExportSection(List<TransactionModel> txs) {
     return Row(
       children: [
         Expanded(
-          child: _ExportButton(icon: Icons.picture_as_pdf_rounded, label: "Export PDF", color: Colors.red.shade50, iconColor: Colors.red),
+          child: _ExportButton(
+            icon: Icons.picture_as_pdf_rounded,
+            label: "Export PDF",
+            color: Colors.red.shade50,
+            iconColor: Colors.red,
+            onTap: () => _exportPdf(txs),
+          ),
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: _ExportButton(icon: Icons.table_chart_rounded, label: "Export CSV", color: Colors.green.shade50, iconColor: Colors.green),
+          child: _ExportButton(
+            icon: Icons.table_chart_rounded,
+            label: "Export CSV",
+            color: Colors.green.shade50,
+            iconColor: Colors.green,
+            onTap: () => _exportCsv(txs),
+          ),
         ),
       ],
     );
@@ -202,20 +253,31 @@ class _ExportButton extends StatelessWidget {
   final String label;
   final Color color;
   final Color iconColor;
+  final VoidCallback onTap;
 
-  const _ExportButton({required this.icon, required this.label, required this.color, required this.iconColor});
+  const _ExportButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.iconColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(color: iconColor, fontWeight: FontWeight.bold, fontSize: 12)),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+        child: Column(
+          children: [
+            Icon(icon, color: iconColor),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(color: iconColor, fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
       ),
     );
   }

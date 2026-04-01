@@ -382,3 +382,7 @@ drop policy if exists audit_logs_select_own on public.audit_logs;
 create policy audit_logs_select_own on public.audit_logs
 for select using (auth.uid() = user_id);
 
+drop policy if exists audit_logs_insert_own on public.audit_logs;
+create policy audit_logs_insert_own on public.audit_logs
+for insert with check (auth.uid() = user_id);
+

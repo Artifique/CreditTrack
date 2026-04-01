@@ -1,5 +1,3 @@
-import 'package:uuid/uuid.dart';
-
 enum TransactionType { depot, retrait, nafama, achat, forfait, sewa }
 enum TransactionCategory { UV, CREDIT }
 
@@ -44,6 +42,12 @@ class TransactionModel {
   }
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
+    double asDouble(dynamic value) {
+      if (value == null) return 0;
+      if (value is num) return value.toDouble();
+      return double.tryParse(value.toString()) ?? 0;
+    }
+
     return TransactionModel(
       id: json['id'],
       userId: json['user_id'],
@@ -51,9 +55,10 @@ class TransactionModel {
       category: TransactionCategory.values.byName(json['category']),
       clientName: json['client_name'],
       clientPhone: json['client_phone'],
-      amount: json['amount'].toDouble(),
-      commission: json['commission']?.toDouble() ?? 0.0,
-      soldeApres: json['solde_apres'].toDouble(),
+      amount: asDouble(json['amount']),
+      commission: asDouble(json['commission']),
+      // Compatibilite ancien schema (solde_apres) / nouveau schema (balance_after)
+      soldeApres: asDouble(json['solde_apres'] ?? json['balance_after']),
       note: json['note'],
       createdAt: DateTime.parse(json['created_at']),
     );
@@ -69,7 +74,6 @@ class TransactionModel {
       'client_phone': clientPhone,
       'amount': amount,
       'commission': commission,
-      'solde_apres': soldeApres,
       'note': note,
       'created_at': createdAt.toIso8601String(),
     };

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/settings_controller.dart';
 import '../../models/profile_model.dart';
 
@@ -94,12 +95,12 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
                     phoneNumber: _phoneController.text.trim(),
                   );
                   if (!context.mounted) return;
+                  await UserFeedback.showSuccessModal(context, "Profil mis à jour avec succès.");
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                 } catch (e) {
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-                  );
+                  await UserFeedback.showErrorModal(context, e);
                 } finally {
                   if (mounted) setState(() => _isSaving = false);
                 }

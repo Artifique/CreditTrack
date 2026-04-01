@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/app_logger.dart';
 import '../models/business_settings_model.dart';
 import '../models/profile_model.dart';
 
@@ -12,6 +13,7 @@ class SettingsController {
     final userId = _userId;
     if (userId == null) return null;
 
+    AppLogger.info('Chargement profil user=$userId');
     final response = await _supabase.from('profiles').select().eq('id', userId).maybeSingle();
     if (response == null) return null;
     return ProfileModel.fromJson(response);
@@ -27,6 +29,7 @@ class SettingsController {
       throw Exception("Utilisateur non connecté.");
     }
 
+    AppLogger.info('Mise a jour profil user=$userId');
     await _supabase.from('profiles').upsert({
       'id': userId,
       'business_name': businessName,
@@ -40,6 +43,7 @@ class SettingsController {
     if (userId == null) return BusinessSettingsModel.empty;
 
     try {
+      AppLogger.info('Chargement settings user=$userId');
       final response = await _supabase
           .from('business_settings')
           .select()
@@ -47,7 +51,9 @@ class SettingsController {
           .maybeSingle();
       if (response == null) return BusinessSettingsModel.empty;
       return BusinessSettingsModel.fromJson(response);
-    } catch (_) {
+    } catch (e, st) {
+      AppLogger.warn('Settings non disponibles, fallback valeurs par defaut');
+      AppLogger.error('Erreur lecture business_settings', e, st);
       return BusinessSettingsModel.empty;
     }
   }
@@ -60,6 +66,7 @@ class SettingsController {
     final userId = _userId;
     if (userId == null) return;
 
+    AppLogger.info('Mise a jour settings user=$userId');
     await _supabase.from('business_settings').upsert({
       'user_id': userId,
       'dark_mode': darkMode,

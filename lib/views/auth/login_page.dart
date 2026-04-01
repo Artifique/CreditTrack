@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/auth_controller.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,9 +18,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void _handleSignIn() async {
     if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email et mot de passe requis."), backgroundColor: Colors.red),
-      );
+      UserFeedback.showErrorModal(context, Exception("Email et mot de passe requis."));
       return;
     }
     setState(() => _isLoading = true);
@@ -28,9 +27,8 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      if (!mounted) return;
+      await UserFeedback.showErrorModal(context, e);
     } finally {
       setState(() => _isLoading = false);
     }

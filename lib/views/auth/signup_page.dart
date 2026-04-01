@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/auth_controller.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -21,8 +22,9 @@ class _SignUpPageState extends State<SignUpPage> {
     if (_businessController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nom commerce, email et mot de passe sont requis."), backgroundColor: Colors.red),
+      UserFeedback.showErrorModal(
+        context,
+        Exception("Nom commerce, email et mot de passe sont requis."),
       );
       return;
     }
@@ -37,15 +39,11 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Compte créé avec succès."), backgroundColor: Colors.green),
-      );
+      await UserFeedback.showSuccessModal(context, "Compte créé avec succès.");
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      await UserFeedback.showErrorModal(context, e);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

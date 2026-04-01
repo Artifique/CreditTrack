@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../services/bluetooth_service.dart';
 
 class PrinterSettingsPage extends StatefulWidget {
@@ -22,6 +23,9 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
       final list = await _bluetoothService.getDevices();
       if (!mounted) return;
       setState(() => _devices = list);
+    } catch (e) {
+      if (!mounted) return;
+      await UserFeedback.showErrorModal(context, e);
     } finally {
       if (mounted) setState(() => _isSearching = false);
     }
@@ -98,9 +102,18 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
             subtitle: Text(isConnected ? "Connecté" : "Non connecté"),
             trailing: TextButton(
               onPressed: () async {
-                await _bluetoothService.connect(device);
-                if (!mounted) return;
-                setState(() => _connectedDevice = device);
+                try {
+                  await _bluetoothService.connect(device);
+                  if (!mounted) return;
+                  setState(() => _connectedDevice = device);
+                  await UserFeedback.showSuccessModal(
+                    context,
+                    "Imprimante connectée: ${device.name ?? device.address}",
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  await UserFeedback.showErrorModal(context, e);
+                }
               },
               child: Text(isConnected ? "Connecté" : "Connecter"),
             ),

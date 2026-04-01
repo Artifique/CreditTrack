@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/app_logger.dart';
 import '../models/profile_model.dart';
 import '../models/transaction_model.dart';
 
@@ -29,10 +30,13 @@ class TransactionController {
   }
 
   // Ajouter une nouvelle transaction
-  Future<void> addTransaction(TransactionModel transaction) async {
+  Future<TransactionModel> addTransaction(TransactionModel transaction) async {
     try {
-      await _supabase.from('transactions').insert(transaction.toJson());
-    } catch (e) {
+      AppLogger.info('Insertion transaction ${transaction.type.name} user=${transaction.userId}');
+      final response = await _supabase.from('transactions').insert(transaction.toJson()).select().single();
+      return TransactionModel.fromJson(response);
+    } catch (e, st) {
+      AppLogger.error('Echec insertion transaction', e, st);
       throw Exception("Erreur lors de l'ajout de la transaction : $e");
     }
   }

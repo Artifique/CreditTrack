@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../services/pdf_service.dart';
+import 'receipt_page.dart';
 
 class NewTransactionPage extends StatefulWidget {
   const NewTransactionPage({super.key});
@@ -13,7 +16,6 @@ class NewTransactionPage extends StatefulWidget {
 
 class _NewTransactionPageState extends State<NewTransactionPage> {
   final _formKey = GlobalKey<FormState>();
-  final _clientNameController = TextEditingController();
   final _clientPhoneController = TextEditingController();
   final _amountController = TextEditingController();
   final _transactionController = TransactionController();
@@ -21,6 +23,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   TransactionType _selectedType = TransactionType.depot;
   double _estimatedCommission = 0;
   bool _isSubmitting = false;
+  TransactionModel? _createdTransaction;
+  String _businessName = "Mon Commerce";
 
   @override
   void initState() {
@@ -30,7 +34,6 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
 
   @override
   void dispose() {
-    _clientNameController.dispose();
     _clientPhoneController.dispose();
     _amountController.dispose();
     super.dispose();
@@ -39,19 +42,13 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   Future<void> _submitTransaction() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session expirée. Reconnecte-toi."), backgroundColor: Colors.red),
-      );
+      UserFeedback.showErrorModal(context, Exception("Session expirée. Reconnecte-toi."));
       return;
     }
 
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
-    if (_clientNameController.text.trim().isEmpty ||
-        _clientPhoneController.text.trim().isEmpty ||
-        amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Complète les champs requis."), backgroundColor: Colors.red),
-      );
+    if (_clientPhoneController.text.trim().isEmpty || amount <= 0) {
+      UserFeedback.showErrorModal(context, Exception("Complète les champs requis."));
       return;
     }
 
@@ -59,7 +56,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       userId: userId,
       type: _selectedType,
       category: _selectedCategory == 'UV' ? TransactionCategory.UV : TransactionCategory.CREDIT,
-      clientName: _clientNameController.text.trim(),
+      clientName: "Client",
       clientPhone: _clientPhoneController.text.trim(),
       amount: amount,
       commission: _estimatedCommission,
@@ -70,14 +67,15 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
 
     setState(() => _isSubmitting = true);
     try {
-      await _transactionController.addTransaction(transaction);
+      final insertedTransaction = await _transactionController.addTransaction(transaction);
+      final profile = await _transactionController.getProfileData();
+      _createdTransaction = insertedTransaction;
+      _businessName = profile?.businessName ?? "Mon Commerce";
       if (!mounted) return;
       _showSuccessDialog();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+      await UserFeedback.showErrorModal(context, e);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -110,13 +108,6 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
               const SizedBox(height: 32),
               _buildTypeSelector(),
               const SizedBox(height: 32),
-              _buildInputField(
-                label: "Nom du Client",
-                hint: "ex: Moussa Diop",
-                icon: Icons.person_outline_rounded,
-                controller: _clientNameController,
-              ),
-              const SizedBox(height: 20),
               _buildInputField(
                 label: "Numéro de Téléphone",
                 hint: "77 000 00 00",
@@ -305,21 +296,43 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             const SizedBox(height: 12),
             const Text("La transaction a été enregistrée avec succès.", textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 32),
-            _buildDialogButton("Imprimer le Reçu", AppColors.primary, true),
+            _buildDialogButton(
+              "Voir / Imprimer le Reçu",
+              AppColors.primary,
+              true,
+              () async {
+                final tx = _createdTransaction;
+                if (tx == null) return;
+                await PdfService().generateReceipt(tx, _businessName);
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReceiptPage(transaction: tx, businessName: _businessName),
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 12),
-            _buildDialogButton("Terminer", Colors.grey.shade200, false),
+            _buildDialogButton(
+              "Terminer",
+              Colors.grey.shade200,
+              false,
+              () => Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDialogButton(String label, Color color, bool isPrimary) {
+  Widget _buildDialogButton(String label, Color color, bool isPrimary, VoidCallback onPressed) {
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
-        onPressed: () => Navigator.popUntil(context, ModalRoute.withName('/dashboard')),
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           elevation: 0,
