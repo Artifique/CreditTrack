@@ -1,0 +1,64 @@
+Launching lib\main.dart on SM A127F in debug mode...
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring project ':app_links'.
+> Could not resolve all artifacts for configuration ':app_links:classpath'.
+   > Could not resolve com.android.tools.build:gradle:8.6.1.
+     Required by:
+         project :app_links
+      > Could not resolve com.android.tools.build:gradle:8.6.1.
+         > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+            > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+               > Hôte inconnu (dl.google.com)
+      > Could not resolve com.android.tools.build:gradle:8.6.1.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+               > Hôte inconnu (repo.maven.apache.org)
+> Failed to notify project evaluation listener.
+   > Could not get unknown property 'android' for project ':app_links' of type org.gradle.api.Project.
+   > Could not get unknown property 'android' for project ':app_links' of type org.gradle.api.Project.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 41s
+Running Gradle task 'assembleDebug'...                             42,0s   
+[!] Gradle threw an error while downloading artifacts from the network.
+Retrying Gradle Build: #1, wait time: 100ms
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring project ':app_links'.
+> Could not resolve all artifacts for configuration ':app_links:classpath'.
+   > Could not resolve com.android.tools.build:gradle:8.6.1.
+     Required by:
+         project :app_links
+      > Could not resolve com.android.tools.build:gradle:8.6.1.
+         > Could not get resource 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+            > Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+               > dl.google.com
+      > Could not resolve com.android.tools.build:gradle:8.6.1.
+         > Could not get resource 'https://repo.maven.apache.org/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+            > Could not GET 'https://repo.maven.apache.org/maven2/com/android/tools/build/gradle/8.6.1/gradle-8.6.1.pom'.
+               > repo.maven.apache.org
+> Failed to notify project evaluation listener.
+   > Could not get unknown property 'android' for project ':app_links' of type org.gradle.api.Project.
+   > Could not get unknown property 'android' for project ':app_links' of type org.gradle.api.Project.
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+Running Gradle task 'assembleDebug'...                           2 487ms   
+[!] Gradle threw an error while downloading artifacts from the network.
+Error: Gradle task assembleDebug failed with exit code 1
+PS C:\Users\DELL\Desktop\Projets\OM> 

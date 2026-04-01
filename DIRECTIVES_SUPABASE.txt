@@ -1,0 +1,64 @@
+GUIDE DE DYNAMISATION CREDITTRAK AVEC SUPABASE
+===============================================
+
+Ce document contient les étapes critiques pour transformer votre interface 
+maquette en une application réelle connectée à une base de données.
+
+ÉTAPES DE CONFIGURATION DU BACKEND (SUPABASE)
+---------------------------------------------
+
+1. CRÉATION DU PROJET :
+   - Rendez-vous sur https://supabase.com/ et connectez-vous.
+   - Cliquez sur "New Project".
+   - Nom : CreditTrak
+   - Database Password : [Choisissez un mot de passe sécurisé]
+   - Region : Choisissez la plus proche de vous (ex: Europe ou Afrique si dispo).
+
+2. CONFIGURATION DES TABLES (SQL) :
+   - Dans le menu de gauche, cliquez sur "SQL Editor".
+   - Cliquez sur "+ New query".
+   - Ouvrez le fichier 'supabase_schema.sql' qui se trouve à la racine de votre projet.
+   - Copiez TOUT son contenu et collez-le dans l'éditeur SQL de Supabase.
+   - Cliquez sur "Run" (en bas à droite).
+   - Vérifiez que vous voyez "Success" et que les tables 'profiles' et 'transactions' sont apparues dans le menu "Table Editor".
+
+3. RÉCUPÉRATION DES CLÉS D'ACCÈS :
+   - Allez dans "Project Settings" (l'icône engrenage en bas à gauche).
+   - Cliquez sur "API".
+   - Copiez l'URL (Project URL).
+   - Copiez l'anon key (Project API anon key).
+
+LIAISON AVEC L'APPLICATION FLUTTER
+----------------------------------
+
+1. CONFIGURATION DU POINT D'ENTRÉE :
+   - Ouvrez le fichier 'lib/main.dart'.
+   - Localisez la fonction Supabase.initialize.
+   - Remplacez 'https://VOTRE_PROJET.supabase.co' par l'URL copiée.
+   - Remplacez 'VOTRE_ANON_KEY' par la clé anon copiée.
+
+2. RÉTABLISSEMENT DU FLUX D'AUTHENTIFICATION :
+   - Pour que l'application soit réellement dynamique, remplacez la ligne 
+     'initialRoute: '/dashboard'' par 'home: const AuthWrapper()' dans 'lib/main.dart'.
+   - Cela forcera les utilisateurs à se connecter avant d'accéder aux données.
+
+DYNAMISATION DES DONNÉES (LOGIQUE MVC)
+--------------------------------------
+
+1. RÉCUPÉRATION DES SOLDES :
+   - Utilisez le fichier 'lib/controllers/transaction_controller.dart'.
+   - La méthode 'getProfileData()' lira automatiquement les soldes UV et Crédit mis à jour par Supabase.
+
+2. ENREGISTREMENT DES OPÉRATIONS :
+   - Dans 'lib/views/operations/new_transaction_page.dart', remplacez l'appel
+     '_showSuccessDialog()' par un appel au contrôleur pour sauvegarder la transaction.
+   - La commission sera calculée automatiquement par le modèle avant l'envoi.
+
+3. TEMPS RÉEL (REALTIME) :
+   - L'application utilise des 'Streams'. Cela signifie que dès qu'une transaction 
+     est ajoutée (même depuis un autre appareil), le Dashboard se mettra à jour 
+     automatiquement sans rafraîchir la page.
+
+RECOMMANDATION :
+Lancer 'flutter pub get' dans votre terminal pour vous assurer que tous les 
+packages (supabase_flutter, fl_chart, etc.) sont bien installés avant de compiler.
