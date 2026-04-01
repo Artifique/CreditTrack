@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../widgets/operation_phone_selector.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -14,6 +16,16 @@ class _HistoryPageState extends State<HistoryPage> {
   final _transactionController = TransactionController();
   final _searchController = TextEditingController();
   String _categoryFilter = "Tout";
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionController.getProfileData().then((p) {
+      if (p != null && mounted) {
+        OperationPhoneController.instance.syncFromProfile(p.operationPhones);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -33,14 +45,25 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: Column(
         children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: OperationPhoneSelector(),
+          ),
           _buildSearchBar(),
           _buildFilterChips(),
           Expanded(
-            child: StreamBuilder<List<TransactionModel>>(
-              stream: _transactionController.transactionStream,
-              builder: (context, snapshot) {
-                final list = _applyFilters(snapshot.data ?? []);
-                return _buildTransactionList(list);
+            child: ListenableBuilder(
+              listenable: OperationPhoneController.instance,
+              builder: (context, _) {
+                return StreamBuilder<List<TransactionModel>>(
+                  stream: _transactionController.watchTransactions(
+                    merchantPhone: OperationPhoneController.instance.selectedForFilter,
+                  ),
+                  builder: (context, snapshot) {
+                    final list = _applyFilters(snapshot.data ?? []);
+                    return _buildTransactionList(list);
+                  },
+                );
               },
             ),
           ),
@@ -171,6 +194,11 @@ class _TransactionHistoryItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(transaction.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
+                  Text(
+                    "Op. ${transaction.merchantPhone}",
+                    style: TextStyle(color: AppColors.primary.withOpacity(0.9), fontSize: 11),
+                  ),
                 Text(
                   "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}",
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),

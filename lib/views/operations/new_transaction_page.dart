@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
+import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
 import '../../services/pdf_service.dart';
@@ -25,11 +26,31 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   bool _isSubmitting = false;
   TransactionModel? _createdTransaction;
   String _businessName = "Mon Commerce";
+  List<String> _operationPhones = [];
+  String? _selectedMerchantPhone;
 
   @override
   void initState() {
-    super.initState() ;
+    super.initState();
     _amountController.addListener(_updateCommission);
+    _loadOperationPhones();
+  }
+
+  Future<void> _loadOperationPhones() async {
+    final p = await _transactionController.getProfileData();
+    if (!mounted) return;
+    final phones = p?.operationPhones ?? [];
+    final sel = OperationPhoneController.instance.selectedForFilter;
+    setState(() {
+      _operationPhones = phones;
+      if (phones.isEmpty) {
+        _selectedMerchantPhone = null;
+      } else if (sel != null && phones.contains(sel)) {
+        _selectedMerchantPhone = sel;
+      } else {
+        _selectedMerchantPhone = phones.first;
+      }
+    });
   }
 
   @override
@@ -51,6 +72,14 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       UserFeedback.showErrorModal(context, Exception("Complète les champs requis."));
       return;
     }
+    if (_operationPhones.isNotEmpty &&
+        (_selectedMerchantPhone == null || _selectedMerchantPhone!.trim().isEmpty)) {
+      UserFeedback.showErrorModal(
+        context,
+        Exception("Choisis le numéro d'opération utilisé pour cette transaction."),
+      );
+      return;
+    }
 
     final transaction = TransactionModel(
       userId: userId,
@@ -58,6 +87,9 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       category: _selectedCategory == 'UV' ? TransactionCategory.UV : TransactionCategory.CREDIT,
       clientName: "Client",
       clientPhone: _clientPhoneController.text.trim(),
+      merchantPhone: _selectedMerchantPhone?.trim().isNotEmpty == true
+          ? _selectedMerchantPhone!.trim()
+          : null,
       amount: amount,
       commission: _estimatedCommission,
       soldeApres: 0,
@@ -108,6 +140,16 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
               const SizedBox(height: 32),
               _buildTypeSelector(),
               const SizedBox(height: 32),
+              if (_operationPhones.isNotEmpty) _buildMerchantPhoneSelector(),
+              if (_operationPhones.isNotEmpty) const SizedBox(height: 20),
+              if (_operationPhones.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(
+                    "Tu peux enregistrer jusqu'à 3 numéros d'opération dans Profil commerce pour les associer à tes transactions.",
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary.withOpacity(0.95)),
+                  ),
+                ),
               _buildInputField(
                 label: "Numéro de Téléphone",
                 hint: "77 000 00 00",
@@ -132,6 +174,40 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMerchantPhoneSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Numéro d'opération utilisé", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedMerchantPhone,
+              hint: const Text("Choisir un numéro"),
+              items: _operationPhones
+                  .map(
+                    (p) => DropdownMenuItem<String>(
+                      value: p,
+                      child: Text(p, overflow: TextOverflow.ellipsis),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (v) => setState(() => _selectedMerchantPhone = v),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

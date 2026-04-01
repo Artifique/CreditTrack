@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
+import 'controllers/operation_phone_controller.dart';
 import 'views/auth/login_page.dart';
 import 'views/auth/signup_page.dart';
 import 'views/dashboard/dashboard_page.dart';
@@ -19,6 +20,8 @@ void main() async {
     url: 'https://dcirsmtvrtiekfxhjtvo.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXJzbXR2cnRpZWtmeGhqdHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ5OTcsImV4cCI6MjA5MDYyMDk5N30.asGxG9RsACj_mLzl782dk8EBST5QAIavlHVWnOrQ64I',
   );
+
+  await OperationPhoneController.instance.init();
 
   runApp(const CreditTrakApp());
 }

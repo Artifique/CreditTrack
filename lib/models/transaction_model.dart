@@ -8,6 +8,8 @@ class TransactionModel {
   final TransactionCategory category;
   final String clientName;
   final String clientPhone;
+  /// Numéro d'opération de l'agent (parmi ceux enregistrés sur le profil).
+  final String? merchantPhone;
   final double amount;
   final double commission; // NOUVEAU : Commission automatisée
   final double soldeApres;
@@ -21,6 +23,7 @@ class TransactionModel {
     required this.category,
     required this.clientName,
     required this.clientPhone,
+    this.merchantPhone,
     required this.amount,
     required this.commission,
     required this.soldeApres,
@@ -55,6 +58,7 @@ class TransactionModel {
       category: TransactionCategory.values.byName(json['category']),
       clientName: json['client_name'],
       clientPhone: json['client_phone'],
+      merchantPhone: json['merchant_phone']?.toString(),
       amount: asDouble(json['amount']),
       commission: asDouble(json['commission']),
       // Compatibilite ancien schema (solde_apres) / nouveau schema (balance_after)
@@ -72,6 +76,7 @@ class TransactionModel {
       'category': category.name,
       'client_name': clientName,
       'client_phone': clientPhone,
+      if (merchantPhone != null && merchantPhone!.trim().isNotEmpty) 'merchant_phone': merchantPhone!.trim(),
       'amount': amount,
       'commission': commission,
       'note': note,

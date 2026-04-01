@@ -23,11 +23,18 @@ class SettingsController {
     required String businessName,
     required String ownerName,
     required String phoneNumber,
+    List<String>? operationPhones,
   }) async {
     final userId = _userId;
     if (userId == null) {
       throw Exception("Utilisateur non connecté.");
     }
+
+    final phones = (operationPhones ?? [])
+        .map((p) => p.trim())
+        .where((p) => p.isNotEmpty)
+        .take(3)
+        .toList();
 
     AppLogger.info('Mise a jour profil user=$userId');
     await _supabase.from('profiles').upsert({
@@ -35,6 +42,7 @@ class SettingsController {
       'business_name': businessName,
       'owner_name': ownerName,
       'phone_number': phoneNumber,
+      'operation_phones': phones,
     });
   }
 

@@ -4,9 +4,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
+import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
 import '../../services/pdf_service.dart';
+import '../../widgets/operation_phone_selector.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -17,38 +19,57 @@ class ReportsPage extends StatefulWidget {
 
 class _ReportsPageState extends State<ReportsPage> {
   final _pdfService = PdfService();
+  final _transactionController = TransactionController();
+
+  @override
+  void initState() {
+    super.initState();
+    _transactionController.getProfileData().then((p) {
+      if (p != null && mounted) {
+        OperationPhoneController.instance.syncFromProfile(p.operationPhones);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final controller = TransactionController();
-    return StreamBuilder<List<TransactionModel>>(
-      stream: controller.transactionStream,
-      builder: (context, snapshot) {
-        final txs = snapshot.data ?? [];
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.bold)),
-            centerTitle: true,
+    return ListenableBuilder(
+      listenable: OperationPhoneController.instance,
+      builder: (context, _) {
+        return StreamBuilder<List<TransactionModel>>(
+          stream: _transactionController.watchTransactions(
+            merchantPhone: OperationPhoneController.instance.selectedForFilter,
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTotalProfitCard(txs),
-                const SizedBox(height: 32),
-                _buildSectionTitle("Répartition des Bénéfices"),
-                const SizedBox(height: 16),
-                _buildCategoryDistribution(txs),
-                const SizedBox(height: 32),
-                _buildSectionTitle("Performance Hebdomadaire"),
-                const SizedBox(height: 16),
-                _buildWeeklyBarChart(txs),
-                const SizedBox(height: 32),
-                _buildExportSection(txs),
-              ],
-            ),
-          ),
+          builder: (context, snapshot) {
+            final txs = snapshot.data ?? [];
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.bold)),
+                centerTitle: true,
+              ),
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const OperationPhoneSelector(),
+                    const SizedBox(height: 20),
+                    _buildTotalProfitCard(txs),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle("Répartition des Bénéfices"),
+                    const SizedBox(height: 16),
+                    _buildCategoryDistribution(txs),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle("Performance Hebdomadaire"),
+                    const SizedBox(height: 16),
+                    _buildWeeklyBarChart(txs),
+                    const SizedBox(height: 32),
+                    _buildExportSection(txs),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -193,10 +214,11 @@ class _ReportsPageState extends State<ReportsPage> {
     }
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/rapport_credit_trak.csv');
-    final buffer = StringBuffer('date,type,categorie,telephone,montant,commission\n');
+    final buffer = StringBuffer('date,type,categorie,telephone_client,numero_operation,montant,commission\n');
     for (final tx in txs) {
+      final op = tx.merchantPhone ?? '';
       buffer.writeln(
-        '${tx.createdAt.toIso8601String()},${tx.type.name},${tx.category.name},${tx.clientPhone},${tx.amount},${tx.commission}',
+        '${tx.createdAt.toIso8601String()},${tx.type.name},${tx.category.name},${tx.clientPhone},$op,${tx.amount},${tx.commission}',
       );
     }
     await file.writeAsString(buffer.toString());

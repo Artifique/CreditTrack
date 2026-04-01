@@ -85,11 +85,12 @@ class PdfService {
           pw.Header(level: 0, child: pw.Text(title, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
           pw.SizedBox(height: 20),
           pw.Table.fromTextArray(
-            headers: ['Date', 'Type', 'Client', 'Montant', 'Solde'],
+            headers: ['Date', 'Type', 'Client', 'N° op.', 'Montant', 'Solde'],
             data: transactions.map((t) => [
               DateFormat('dd/MM/yy').format(t.createdAt),
               t.type.name,
               t.clientName,
+              t.merchantPhone ?? '—',
               "${t.amount} F",
               "${t.soldeApres} F"
             ]).toList(),

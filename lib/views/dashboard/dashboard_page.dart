@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme.dart';
+import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/profile_model.dart';
 import '../../models/transaction_model.dart';
+import '../../widgets/operation_phone_selector.dart';
 import 'widgets/activity_chart.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -21,6 +23,11 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _profileFuture = _transactionController.getProfileData();
+    _profileFuture.then((p) {
+      if (p != null) {
+        OperationPhoneController.instance.syncFromProfile(p.operationPhones);
+      }
+    });
   }
 
   @override
@@ -29,23 +36,30 @@ class _DashboardPageState extends State<DashboardPage> {
       future: _profileFuture,
       builder: (context, profileSnapshot) {
         final profile = profileSnapshot.data;
-        return StreamBuilder<List<TransactionModel>>(
-          stream: _transactionController.transactionStream,
-          builder: (context, txSnapshot) {
-            final transactions = txSnapshot.data ?? [];
-            final totalProfit = transactions.fold<double>(0, (sum, tx) => sum + tx.commission);
+        return ListenableBuilder(
+          listenable: OperationPhoneController.instance,
+          builder: (context, _) {
+            return StreamBuilder<List<TransactionModel>>(
+              stream: _transactionController.watchTransactions(
+                merchantPhone: OperationPhoneController.instance.selectedForFilter,
+              ),
+              builder: (context, txSnapshot) {
+                final transactions = txSnapshot.data ?? [];
+                final totalProfit = transactions.fold<double>(0, (sum, tx) => sum + tx.commission);
 
-            return Scaffold(
-              body: CustomScrollView(
-                slivers: [
-                  _buildAppBar(profile),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildBalanceCards(profile, totalProfit),
+                return Scaffold(
+                  body: CustomScrollView(
+                    slivers: [
+                      _buildAppBar(profile),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const OperationPhoneSelector(),
+                              const SizedBox(height: 16),
+                              _buildBalanceCards(profile, totalProfit),
                           const SizedBox(height: 32),
                           ActivityChart(transactions: transactions),
                           const SizedBox(height: 32),
@@ -70,6 +84,8 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: const Icon(Icons.add, color: Colors.white, size: 30),
               ),
               floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+            );
+              },
             );
           },
         );

@@ -28,6 +28,7 @@ create table if not exists public.profiles (
   business_name text not null default 'Mon Commerce',
   owner_name text,
   phone_number text,
+  operation_phones text[] not null default '{}',
   -- Colonnes legacy pour compatibilite avec le code existant.
   solde_uv numeric(16,2) not null default 0,
   solde_credit numeric(16,2) not null default 0,
@@ -84,6 +85,7 @@ create table if not exists public.transactions (
   balance_after numeric(16,2) not null default 0,
   client_name text not null,
   client_phone text not null,
+  merchant_phone text,
   note text,
   external_ref text,
   device_id text,
@@ -92,6 +94,7 @@ create table if not exists public.transactions (
 );
 
 create index if not exists idx_transactions_user_created_at on public.transactions (user_id, created_at desc);
+create index if not exists idx_transactions_user_merchant_phone on public.transactions (user_id, merchant_phone);
 create index if not exists idx_transactions_user_category on public.transactions (user_id, category);
 create index if not exists idx_transactions_user_type on public.transactions (user_id, type);
 create index if not exists idx_transactions_client_phone on public.transactions (client_phone);
