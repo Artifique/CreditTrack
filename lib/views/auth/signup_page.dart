@@ -109,7 +109,18 @@ class _SignUpPageState extends State<SignUpPage> {
             prefixIcon: Icon(icon, color: AppColors.primary),
             filled: true,
             fillColor: Theme.of(context).colorScheme.surface,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.black, width: 1.5),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.black, width: 1.5),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Colors.black, width: 2),
+            ),
             contentPadding: const EdgeInsets.all(20),
           ),
         ),
