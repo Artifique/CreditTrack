@@ -5,6 +5,7 @@ import '../../controllers/settings_controller.dart';
 import '../../controllers/theme_mode_controller.dart';
 import '../../models/business_settings_model.dart';
 import '../../models/profile_model.dart';
+import '../../widgets/profile_avatar.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -140,10 +141,7 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 35,
-            backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11'),
-          ),
+          ProfileAvatar(profile: profile, radius: 35, lightStyle: true),
           const SizedBox(width: 20),
           Expanded(
             child: Column(

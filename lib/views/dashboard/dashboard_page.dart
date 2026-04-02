@@ -8,6 +8,7 @@ import '../../controllers/transaction_controller.dart';
 import '../../models/profile_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/operation_phone_selector.dart';
+import '../../widgets/profile_avatar.dart';
 import '../operations/transaction_detail_page.dart';
 import 'widgets/activity_chart.dart';
 
@@ -129,10 +130,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             GestureDetector(
               onTap: () {}, // Accès rapide au profil
-              child: const CircleAvatar(
-                radius: 18,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11'),
-              ),
+              child: ProfileAvatar(profile: profile, radius: 18),
             ),
           ],
         ),

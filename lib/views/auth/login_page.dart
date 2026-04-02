@@ -80,13 +80,24 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildLogo() {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            shape: BoxShape.circle,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Image.asset(
+            'CreditTrak.png',
+            width: 100,
+            height: 100,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 64),
+              );
+            },
           ),
-          child: const Icon(Icons.flash_on_rounded, color: AppColors.primary, size: 64),
         ),
         const SizedBox(height: 16),
         const Text("CreditTrak", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primary)),
