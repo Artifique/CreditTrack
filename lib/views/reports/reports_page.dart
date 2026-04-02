@@ -7,6 +7,7 @@ import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../services/export_share_service.dart';
 import '../../services/pdf_service.dart';
 import '../../widgets/operation_phone_selector.dart';
 
@@ -55,14 +56,16 @@ class _ReportsPageState extends State<ReportsPage> {
                     const OperationPhoneSelector(),
                     const SizedBox(height: 20),
                     _buildTotalProfitCard(txs),
-                    const SizedBox(height: 32),
-                    _buildSectionTitle("Répartition des Bénéfices"),
                     const SizedBox(height: 16),
-                    _buildCategoryDistribution(txs),
+                    _buildKpiRow(context, txs),
                     const SizedBox(height: 32),
-                    _buildSectionTitle("Performance Hebdomadaire"),
+                    _buildSectionTitle(context, "Répartition des Bénéfices"),
                     const SizedBox(height: 16),
-                    _buildWeeklyBarChart(txs),
+                    _buildCategoryDistribution(context, txs),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle(context, "Performance Hebdomadaire"),
+                    const SizedBox(height: 16),
+                    _buildWeeklyBarChart(context, txs),
                     const SizedBox(height: 32),
                     _buildExportSection(txs),
                   ],
@@ -75,8 +78,15 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary));
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+    );
   }
 
   Widget _buildTotalProfitCard(List<TransactionModel> txs) {
@@ -109,7 +119,7 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildCategoryDistribution(List<TransactionModel> txs) {
+  Widget _buildCategoryDistribution(BuildContext context, List<TransactionModel> txs) {
     final credit = txs.where((tx) => tx.category == TransactionCategory.CREDIT).fold<double>(0, (s, tx) => s + tx.commission);
     final uv = txs.where((tx) => tx.category == TransactionCategory.UV).fold<double>(0, (s, tx) => s + tx.commission);
     final total = (credit + uv) == 0 ? 1 : (credit + uv);
@@ -118,7 +128,10 @@ class _ReportsPageState extends State<ReportsPage> {
     return Container(
       height: 200,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -134,14 +147,22 @@ class _ReportsPageState extends State<ReportsPage> {
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _LegendItem(color: AppColors.primary, label: "Crédit"),
-                SizedBox(height: 12),
-                _LegendItem(color: AppColors.secondary, label: "UV (MM)"),
+                _LegendItem(
+                  color: AppColors.primary,
+                  label: "Crédit",
+                  textColor: Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(height: 12),
+                _LegendItem(
+                  color: AppColors.secondary,
+                  label: "UV (MM)",
+                  textColor: Theme.of(context).colorScheme.onSurface,
+                ),
               ],
             ),
           ),
@@ -150,7 +171,28 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildWeeklyBarChart(List<TransactionModel> txs) {
+  Widget _buildKpiRow(BuildContext context, List<TransactionModel> txs) {
+    final uvProfit = txs
+        .where((tx) => tx.category == TransactionCategory.UV)
+        .fold<double>(0, (sum, tx) => sum + tx.commission);
+    final creditProfit = txs
+        .where((tx) => tx.category == TransactionCategory.CREDIT)
+        .fold<double>(0, (sum, tx) => sum + tx.commission);
+    final surface = Theme.of(context).colorScheme.surface;
+    return Row(
+      children: [
+        Expanded(child: _KpiCard(surface: surface, title: "Bénéfice UV", value: "${uvProfit.toStringAsFixed(0)} CFA")),
+        const SizedBox(width: 12),
+        Expanded(
+            child: _KpiCard(
+                surface: surface, title: "Bénéfice Crédit", value: "${creditProfit.toStringAsFixed(0)} CFA")),
+        const SizedBox(width: 12),
+        Expanded(child: _KpiCard(surface: surface, title: "Transactions", value: "${txs.length}")),
+      ],
+    );
+  }
+
+  Widget _buildWeeklyBarChart(BuildContext context, List<TransactionModel> txs) {
     final now = DateTime.now();
     final weekDays = List.generate(7, (i) => DateTime(now.year, now.month, now.day).subtract(Duration(days: 6 - i)));
     final values = weekDays.map((day) {
@@ -163,7 +205,10 @@ class _ReportsPageState extends State<ReportsPage> {
     return Container(
       height: 250,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: BarChart(
         BarChartData(
           gridData: const FlGridData(show: false),
@@ -204,7 +249,12 @@ class _ReportsPageState extends State<ReportsPage> {
     }
     final file = await _pdfService.generateReport(txs, "Rapport CreditTrack");
     if (!mounted) return;
-    await UserFeedback.showSuccessModal(context, "PDF exporté: ${file.path}");
+    await ExportShareService.sharePdf(file, subject: 'Rapport CreditTrak');
+    if (!mounted) return;
+    await UserFeedback.showSuccessModal(
+      context,
+      "PDF généré. Utilise l’app partage Android pour l’enregistrer (Fichiers, Drive, WhatsApp…).",
+    );
   }
 
   Future<void> _exportCsv(List<TransactionModel> txs) async {
@@ -223,7 +273,12 @@ class _ReportsPageState extends State<ReportsPage> {
     }
     await file.writeAsString(buffer.toString());
     if (!mounted) return;
-    await UserFeedback.showSuccessModal(context, "CSV exporté: ${file.path}");
+    await ExportShareService.shareCsv(file, subject: 'Export CreditTrak CSV');
+    if (!mounted) return;
+    await UserFeedback.showSuccessModal(
+      context,
+      "CSV généré. Choisis où l’enregistrer via le menu Partager.",
+    );
   }
 
   Widget _buildExportSection(List<TransactionModel> txs) {
@@ -256,7 +311,8 @@ class _ReportsPageState extends State<ReportsPage> {
 class _LegendItem extends StatelessWidget {
   final Color color;
   final String label;
-  const _LegendItem({required this.color, required this.label});
+  final Color textColor;
+  const _LegendItem({required this.color, required this.label, required this.textColor});
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +320,7 @@ class _LegendItem extends StatelessWidget {
       children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+        Text(label, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: textColor)),
       ],
     );
   }
@@ -300,6 +356,43 @@ class _ExportButton extends StatelessWidget {
             Text(label, style: TextStyle(color: iconColor, fontWeight: FontWeight.bold, fontSize: 12)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _KpiCard extends StatelessWidget {
+  final Color surface;
+  final String title;
+  final String value;
+
+  const _KpiCard({required this.surface, required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ],
       ),
     );
   }

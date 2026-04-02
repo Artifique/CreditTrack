@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/settings_controller.dart';
+import '../../controllers/theme_mode_controller.dart';
 import '../../models/business_settings_model.dart';
 import '../../models/profile_model.dart';
 
@@ -27,15 +28,18 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<ProfileModel?>(
-      future: _profileFuture,
-      builder: (context, profileSnapshot) {
-        return FutureBuilder<BusinessSettingsModel>(
-          future: _settingsFuture,
-          builder: (context, settingsSnapshot) {
-            final profile = profileSnapshot.data;
-            final settings = settingsSnapshot.data ?? BusinessSettingsModel.empty;
-            return Scaffold(
+    return ListenableBuilder(
+      listenable: ThemeModeController.instance,
+      builder: (context, _) {
+        return FutureBuilder<ProfileModel?>(
+          future: _profileFuture,
+          builder: (context, profileSnapshot) {
+            return FutureBuilder<BusinessSettingsModel>(
+              future: _settingsFuture,
+              builder: (context, settingsSnapshot) {
+                final profile = profileSnapshot.data;
+                final settings = settingsSnapshot.data ?? BusinessSettingsModel.empty;
+                return Scaffold(
               appBar: AppBar(
                 title: const Text("Paramètres", style: TextStyle(fontWeight: FontWeight.bold)),
                 centerTitle: true,
@@ -47,6 +51,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     _buildProfileSection(profile),
                     const SizedBox(height: 32),
                     _buildSettingsSection(
+                      context,
                       "Commerce",
                       [
                         _SettingsTile(
@@ -65,6 +70,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 24),
                     _buildSettingsSection(
+                      context,
                       "Imprimante & Bluetooth",
                       [
                         _SettingsTile(
@@ -77,6 +83,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 24),
                     _buildSettingsSection(
+                      context,
                       "Préférences",
                       [
                         _SettingsTile(
@@ -85,11 +92,28 @@ class _SettingsPageState extends State<SettingsPage> {
                           value: settings.language == 'fr' ? "Français" : settings.language.toUpperCase(),
                           onTap: () {},
                         ),
-                        _SettingsTile(
-                          icon: Icons.dark_mode_rounded,
-                          title: "Mode Sombre",
-                          value: settings.darkMode ? "Activé" : "Désactivé",
-                          onTap: () {},
+                        SwitchListTile(
+                          secondary: Icon(Icons.dark_mode_rounded, color: AppColors.primary),
+                          title: const Text("Mode sombre", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                          value: ThemeModeController.instance.isDark,
+                          onChanged: (v) async {
+                            await ThemeModeController.instance.setDarkMode(v);
+                            try {
+                              await _settingsController.updateBusinessSettings(
+                                darkMode: v,
+                                language: settings.language,
+                                autoPrintReceipt: settings.autoPrintReceipt,
+                              );
+                            } catch (_) {
+                              await ThemeModeController.instance.setDarkMode(!v);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Impossible de sauvegarder le thème sur le serveur.")),
+                                );
+                              }
+                            }
+                          },
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                         ),
                       ],
                     ),
@@ -98,6 +122,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
               ),
+                );
+              },
             );
           },
         );
@@ -147,17 +173,23 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSettingsSection(String title, List<Widget> tiles) {
+  Widget _buildSettingsSection(BuildContext context, String title, List<Widget> tiles) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 8, bottom: 12),
-          child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.01), blurRadius: 10)],
           ),
@@ -197,8 +229,11 @@ class _SettingsTile extends StatelessWidget {
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(value, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+          Text(
+            value,
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
+          ),
+          Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
         ],
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),

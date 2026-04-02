@@ -44,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
@@ -54,12 +53,14 @@ class _LoginPageState extends State<LoginPage> {
               _buildLogo(),
               const SizedBox(height: 48),
               _buildInputField(
+                context,
                 controller: _emailController,
                 label: "Email",
                 icon: Icons.alternate_email_rounded,
               ),
               const SizedBox(height: 20),
               _buildInputField(
+                context,
                 controller: _passwordController,
                 label: "Mot de passe",
                 icon: Icons.lock_outline_rounded,
@@ -94,7 +95,8 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildInputField({
+  Widget _buildInputField(
+    BuildContext context, {
     required TextEditingController controller,
     required String label,
     required IconData icon,
@@ -111,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.primary),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.all(20),
           ),

@@ -61,7 +61,6 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 20),
@@ -72,13 +71,13 @@ class _SignUpPageState extends State<SignUpPage> {
             const SizedBox(height: 8),
             const Text("Commencez à gérer votre business intelligemment.", style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 40),
-            _buildInputField(label: "Nom du Commerce", hint: "ex: Toure Multi-Services", icon: Icons.storefront_rounded, controller: _businessController),
+            _buildInputField(context, label: "Nom du Commerce", hint: "ex: Toure Multi-Services", icon: Icons.storefront_rounded, controller: _businessController),
             const SizedBox(height: 20),
-            _buildInputField(label: "Votre Nom Complet", hint: "ex: Aly Toure", icon: Icons.person_outline_rounded, controller: _nameController),
+            _buildInputField(context, label: "Votre Nom Complet", hint: "ex: Aly Toure", icon: Icons.person_outline_rounded, controller: _nameController),
             const SizedBox(height: 20),
-            _buildInputField(label: "Email Professionnel", hint: "nom@exemple.com", icon: Icons.alternate_email_rounded, controller: _emailController),
+            _buildInputField(context, label: "Email Professionnel", hint: "nom@exemple.com", icon: Icons.alternate_email_rounded, controller: _emailController),
             const SizedBox(height: 20),
-            _buildInputField(label: "Mot de passe", hint: "••••••••", icon: Icons.lock_outline_rounded, isPassword: true, controller: _passwordController),
+            _buildInputField(context, label: "Mot de passe", hint: "••••••••", icon: Icons.lock_outline_rounded, isPassword: true, controller: _passwordController),
             const SizedBox(height: 40),
             _buildSignUpButton(),
             const SizedBox(height: 24),
@@ -89,7 +88,14 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildInputField({required String label, required String hint, required IconData icon, required TextEditingController controller, bool isPassword = false}) {
+  Widget _buildInputField(
+    BuildContext context, {
+    required String label,
+    required String hint,
+    required IconData icon,
+    required TextEditingController controller,
+    bool isPassword = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -102,7 +108,7 @@ class _SignUpPageState extends State<SignUpPage> {
             hintText: hint,
             prefixIcon: Icon(icon, color: AppColors.primary),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.all(20),
           ),

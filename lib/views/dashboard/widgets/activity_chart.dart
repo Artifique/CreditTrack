@@ -25,14 +25,21 @@ class ActivityChart extends StatelessWidget {
       height: 220,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Activité de la semaine", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            "Activité de la semaine",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
           const SizedBox(height: 20),
           Expanded(
             child: LineChart(

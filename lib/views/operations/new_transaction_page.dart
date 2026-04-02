@@ -5,6 +5,7 @@ import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../services/export_share_service.dart';
 import '../../services/pdf_service.dart';
 import 'receipt_page.dart';
 
@@ -186,9 +187,9 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -265,14 +266,20 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   Widget _buildTypeSelector() {
-    final types = _selectedCategory == 'UV' 
-        ? [TransactionType.depot, TransactionType.retrait, TransactionType.nafama] 
+    final types = _selectedCategory == 'UV'
+        ? [
+            TransactionType.depot,
+            TransactionType.retrait,
+            TransactionType.nafama,
+            TransactionType.transfertUv,
+            TransactionType.transfertC2c,
+          ]
         : [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
 
     return Wrap(
       spacing: 12,
       children: types.map((type) => ChoiceChip(
-        label: Text(type.name.toUpperCase()),
+        label: Text(_typeLabel(type)),
         selected: _selectedType == type,
         onSelected: (val) => setState(() {
           _selectedType = type;
@@ -288,6 +295,27 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       )).toList(),
     );
+  }
+
+  String _typeLabel(TransactionType type) {
+    switch (type) {
+      case TransactionType.depot:
+        return "DEPOT";
+      case TransactionType.retrait:
+        return "RETRAIT";
+      case TransactionType.nafama:
+        return "NAFAMA";
+      case TransactionType.transfertUv:
+        return "TRANSFERT UV";
+      case TransactionType.transfertC2c:
+        return "TRANSFERT C2C";
+      case TransactionType.achat:
+        return "ACHAT";
+      case TransactionType.forfait:
+        return "FORFAIT";
+      case TransactionType.sewa:
+        return "SEWA";
+    }
   }
 
   Widget _buildInputField({
@@ -314,7 +342,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             hintText: hint,
             prefixIcon: Icon(icon, color: AppColors.primary),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -388,6 +416,18 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                     builder: (_) => ReceiptPage(transaction: tx, businessName: _businessName),
                   ),
                 );
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildDialogButton(
+              "Partager le PDF",
+              Colors.blue.shade50,
+              false,
+              () async {
+                final tx = _createdTransaction;
+                if (tx == null) return;
+                final file = await PdfService().generateReceipt(tx, _businessName);
+                await ExportShareService.sharePdf(file);
               },
             ),
             const SizedBox(height: 12),

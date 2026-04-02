@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme.dart';
 import '../../controllers/operation_phone_controller.dart';
+import '../../controllers/settings_controller.dart';
+import '../../controllers/theme_mode_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/profile_model.dart';
 import '../../models/transaction_model.dart';
@@ -27,6 +29,9 @@ class _DashboardPageState extends State<DashboardPage> {
       if (p != null) {
         OperationPhoneController.instance.syncFromProfile(p.operationPhones);
       }
+    });
+    SettingsController().getBusinessSettings().then((s) {
+      if (mounted) ThemeModeController.instance.applyFromRemote(s.darkMode);
     });
   }
 
@@ -98,7 +103,7 @@ class _DashboardPageState extends State<DashboardPage> {
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         title: Row(
@@ -108,9 +113,13 @@ class _DashboardPageState extends State<DashboardPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Bonjour,", style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                Text("Bonjour,", style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 Text(profile?.ownerName ?? profile?.businessName ?? "Commerçant",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    )),
               ],
             ),
             GestureDetector(
@@ -159,7 +168,11 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 
@@ -212,7 +225,7 @@ class _DashboardPageState extends State<DashboardPage> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
           ),
@@ -220,7 +233,10 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded, color: AppColors.primary),
               ),
               const SizedBox(width: 16),

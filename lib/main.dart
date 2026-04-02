@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
 import 'controllers/operation_phone_controller.dart';
+import 'controllers/theme_mode_controller.dart';
 import 'views/auth/login_page.dart';
 import 'views/auth/signup_page.dart';
 import 'views/dashboard/dashboard_page.dart';
@@ -22,6 +23,7 @@ void main() async {
   );
 
   await OperationPhoneController.instance.init();
+  await ThemeModeController.instance.init();
 
   runApp(const CreditTrakApp());
 }
@@ -31,21 +33,28 @@ class CreditTrakApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'CreditTrak',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const AuthWrapper(),
-      routes: {
-        '/login': (context) => const LoginPage(),
-        '/signup': (context) => const SignUpPage(),
-        '/dashboard': (context) => const DashboardPage(),
-        '/new-transaction': (context) => const NewTransactionPage(),
-        '/history': (context) => const HistoryPage(),
-        '/settings': (context) => const SettingsPage(),
-        '/settings-business': (context) => const BusinessProfilePage(),
-        '/settings-printer': (context) => const PrinterSettingsPage(),
-        '/reports': (context) => const ReportsPage(),
+    return ListenableBuilder(
+      listenable: ThemeModeController.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'CreditTrak',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: ThemeModeController.instance.themeMode,
+          home: const AuthWrapper(),
+          routes: {
+            '/login': (context) => const LoginPage(),
+            '/signup': (context) => const SignUpPage(),
+            '/dashboard': (context) => const DashboardPage(),
+            '/new-transaction': (context) => const NewTransactionPage(),
+            '/history': (context) => const HistoryPage(),
+            '/settings': (context) => const SettingsPage(),
+            '/settings-business': (context) => const BusinessProfilePage(),
+            '/settings-printer': (context) => const PrinterSettingsPage(),
+            '/reports': (context) => const ReportsPage(),
+          },
+        );
       },
     );
   }

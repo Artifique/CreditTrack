@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
@@ -82,7 +83,7 @@ class _HistoryPageState extends State<HistoryPage> {
           hintText: "Rechercher un client ou un numéro...",
           prefixIcon: const Icon(Icons.search_rounded),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: Theme.of(context).colorScheme.surface,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -125,9 +126,170 @@ class _HistoryPageState extends State<HistoryPage> {
       padding: const EdgeInsets.all(20),
       itemCount: transactions.length,
       itemBuilder: (context, index) {
-        return _TransactionHistoryItem(transaction: transactions[index]);
+        final tx = transactions[index];
+        return _TransactionHistoryItem(
+          transaction: tx,
+          onEdit: () => _openEditDialog(tx),
+          onDelete: () => _confirmDelete(tx),
+        );
       },
     );
+  }
+
+  Future<void> _confirmDelete(TransactionModel tx) async {
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Supprimer la transaction"),
+            content: const Text("Cette action va annuler son impact sur le solde. Continuer ?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Supprimer")),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!ok) return;
+    try {
+      await _transactionController.deleteTransaction(tx.id!);
+      if (!mounted) return;
+      await UserFeedback.showSuccessModal(context, "Transaction supprimée.");
+    } catch (e) {
+      if (!mounted) return;
+      await UserFeedback.showErrorModal(context, e);
+    }
+  }
+
+  Future<void> _openEditDialog(TransactionModel tx) async {
+    final phoneCtrl = TextEditingController(text: tx.clientPhone);
+    final amountCtrl = TextEditingController(text: tx.amount.toStringAsFixed(0));
+    TransactionCategory selectedCategory = tx.category;
+    TransactionType selectedType = tx.type;
+
+    List<TransactionType> typesFor(TransactionCategory c) => c == TransactionCategory.UV
+        ? [
+            TransactionType.depot,
+            TransactionType.retrait,
+            TransactionType.nafama,
+            TransactionType.transfertUv,
+            TransactionType.transfertC2c,
+          ]
+        : [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
+
+    String typeLabel(TransactionType type) {
+      switch (type) {
+        case TransactionType.depot:
+          return "Depot";
+        case TransactionType.retrait:
+          return "Retrait";
+        case TransactionType.nafama:
+          return "Nafama";
+        case TransactionType.transfertUv:
+          return "Transfert UV";
+        case TransactionType.transfertC2c:
+          return "Transfert C2C";
+        case TransactionType.achat:
+          return "Achat";
+        case TransactionType.forfait:
+          return "Forfait";
+        case TransactionType.sewa:
+          return "Sewa";
+      }
+    }
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setLocalState) {
+          final allowed = typesFor(selectedCategory);
+          if (!allowed.contains(selectedType)) selectedType = allowed.first;
+          return AlertDialog(
+            title: const Text("Modifier la transaction"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<TransactionCategory>(
+                    value: selectedCategory,
+                    decoration: const InputDecoration(labelText: "Catégorie"),
+                    items: const [
+                      DropdownMenuItem(value: TransactionCategory.UV, child: Text("UV")),
+                      DropdownMenuItem(value: TransactionCategory.CREDIT, child: Text("CREDIT")),
+                    ],
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setLocalState(() {
+                        selectedCategory = v;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<TransactionType>(
+                    value: selectedType,
+                    decoration: const InputDecoration(labelText: "Type"),
+                    items: allowed
+                        .map((e) => DropdownMenuItem<TransactionType>(value: e, child: Text(typeLabel(e))))
+                        .toList(),
+                    onChanged: (v) {
+                      if (v == null) return;
+                      setLocalState(() => selectedType = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneCtrl,
+                    decoration: const InputDecoration(labelText: "Téléphone client"),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amountCtrl,
+                    decoration: const InputDecoration(labelText: "Montant"),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+              ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text("Enregistrer")),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (saved != true) return;
+
+    final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
+    if (phoneCtrl.text.trim().isEmpty || amount <= 0) {
+      await UserFeedback.showErrorModal(context, Exception("Montant et téléphone sont requis."));
+      return;
+    }
+
+    try {
+      final updated = TransactionModel(
+        id: tx.id,
+        userId: tx.userId,
+        type: selectedType,
+        category: selectedCategory,
+        clientName: tx.clientName,
+        clientPhone: phoneCtrl.text.trim(),
+        merchantPhone: tx.merchantPhone,
+        amount: amount,
+        commission: TransactionModel.calculateCommission(selectedType, amount),
+        soldeApres: tx.soldeApres,
+        note: tx.note,
+        createdAt: tx.createdAt,
+      );
+      await _transactionController.updateTransaction(updated);
+      if (!mounted) return;
+      await UserFeedback.showSuccessModal(context, "Transaction modifiée.");
+    } catch (e) {
+      if (!mounted) return;
+      await UserFeedback.showErrorModal(context, e);
+    }
   }
 }
 
@@ -146,7 +308,7 @@ class _FilterChip extends StatelessWidget {
         label: Text(label),
         selected: isSelected,
         onSelected: (val) => onTap(),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         selectedColor: AppColors.primary.withOpacity(0.2),
         labelStyle: TextStyle(
           color: isSelected ? AppColors.primary : AppColors.textSecondary,
@@ -161,7 +323,13 @@ class _FilterChip extends StatelessWidget {
 
 class _TransactionHistoryItem extends StatelessWidget {
   final TransactionModel transaction;
-  const _TransactionHistoryItem({required this.transaction});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  const _TransactionHistoryItem({
+    required this.transaction,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +339,7 @@ class _TransactionHistoryItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
@@ -218,6 +386,17 @@ class _TransactionHistoryItem extends StatelessWidget {
                 ),
               ),
               Text(transaction.category.name, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, size: 18),
+                onSelected: (v) {
+                  if (v == 'edit') onEdit();
+                  if (v == 'delete') onDelete();
+                },
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text("Modifier")),
+                  PopupMenuItem(value: 'delete', child: Text("Supprimer")),
+                ],
+              ),
             ],
           ),
         ],

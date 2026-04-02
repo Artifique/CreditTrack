@@ -1,4 +1,13 @@
-enum TransactionType { depot, retrait, nafama, achat, forfait, sewa }
+enum TransactionType {
+  depot,
+  retrait,
+  nafama,
+  transfertUv,
+  transfertC2c,
+  achat,
+  forfait,
+  sewa
+}
 enum TransactionCategory { UV, CREDIT }
 
 class TransactionModel {
@@ -34,13 +43,19 @@ class TransactionModel {
   // Logique métier v1.1 : Calcul automatique de la commission
   static double calculateCommission(TransactionType type, double amount) {
     switch (type) {
-      case TransactionType.depot: return amount * 0.0014; // 0.14%
-      case TransactionType.retrait: return amount * 0.0028; // 0.28%
-      case TransactionType.nafama: return amount * 0.0455; // 4.55%
+      case TransactionType.depot:
+        return amount * 0.0014; // 0.14%
+      case TransactionType.retrait:
+        return amount * 0.0028; // 0.28%
+      case TransactionType.nafama:
+        return amount * 0.0455; // 4.55%
+      case TransactionType.transfertUv:
+      case TransactionType.transfertC2c:
       case TransactionType.achat:
+        return 0;
       case TransactionType.forfait:
-      case TransactionType.sewa: return amount * 0.10; // 10%
-      default: return 0;
+      case TransactionType.sewa:
+        return amount * 0.10; // 10%
     }
   }
 
@@ -54,7 +69,11 @@ class TransactionModel {
     return TransactionModel(
       id: json['id'],
       userId: json['user_id'],
-      type: TransactionType.values.byName(json['type']),
+      type: TransactionType.values.byName(
+        json['type'] == 'transfert_uv'
+            ? 'transfertUv'
+            : (json['type'] == 'transfert_c2c' ? 'transfertC2c' : json['type']),
+      ),
       category: TransactionCategory.values.byName(json['category']),
       clientName: json['client_name'],
       clientPhone: json['client_phone'],
@@ -72,7 +91,9 @@ class TransactionModel {
     return {
       if (id != null) 'id': id,
       'user_id': userId,
-      'type': type.name,
+      'type': type == TransactionType.transfertUv
+          ? 'transfert_uv'
+          : (type == TransactionType.transfertC2c ? 'transfert_c2c' : type.name),
       'category': category.name,
       'client_name': clientName,
       'client_phone': clientPhone,

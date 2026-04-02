@@ -63,7 +63,10 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
   Widget _buildFormatSelector() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         children: [
           _buildFormatOption("Format 58mm (Standard)", true),

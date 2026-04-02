@@ -59,6 +59,50 @@ class TransactionController {
     }
   }
 
+  Future<TransactionModel> updateTransaction(TransactionModel transaction) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception("Session expirée. Reconnecte-toi.");
+    }
+    if (transaction.id == null) {
+      throw Exception("Transaction invalide: identifiant manquant.");
+    }
+
+    try {
+      final response = await _supabase.rpc('update_transaction', params: {
+        'p_id': transaction.id,
+        'p_user_id': userId,
+        'p_type': transaction.toJson()['type'],
+        'p_category': transaction.category.name,
+        'p_client_name': transaction.clientName,
+        'p_client_phone': transaction.clientPhone,
+        'p_merchant_phone': transaction.merchantPhone,
+        'p_amount': transaction.amount,
+        'p_note': transaction.note,
+      });
+      return TransactionModel.fromJson((response as List).first as Map<String, dynamic>);
+    } catch (e, st) {
+      AppLogger.error('Echec modification transaction', e, st);
+      throw Exception("Erreur lors de la modification de la transaction : $e");
+    }
+  }
+
+  Future<void> deleteTransaction(String transactionId) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception("Session expirée. Reconnecte-toi.");
+    }
+    try {
+      await _supabase.rpc('delete_transaction', params: {
+        'p_id': transactionId,
+        'p_user_id': userId,
+      });
+    } catch (e, st) {
+      AppLogger.error('Echec suppression transaction', e, st);
+      throw Exception("Erreur lors de la suppression de la transaction : $e");
+    }
+  }
+
   Future<List<TransactionModel>> getTransactions({int limit = 100, String? merchantPhone}) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return [];
