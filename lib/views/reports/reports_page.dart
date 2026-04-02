@@ -1,14 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
-import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
-import '../../services/export_share_service.dart';
-import '../../services/pdf_service.dart';
 import '../../widgets/operation_phone_selector.dart';
 
 class ReportsPage extends StatefulWidget {
@@ -19,7 +14,6 @@ class ReportsPage extends StatefulWidget {
 }
 
 class _ReportsPageState extends State<ReportsPage> {
-  final _pdfService = PdfService();
   final _transactionController = TransactionController();
 
   @override
@@ -66,8 +60,6 @@ class _ReportsPageState extends State<ReportsPage> {
                     _buildSectionTitle(context, "Performance Hebdomadaire"),
                     const SizedBox(height: 16),
                     _buildWeeklyBarChart(context, txs),
-                    const SizedBox(height: 32),
-                    _buildExportSection(txs),
                   ],
                 ),
               ),
@@ -241,71 +233,6 @@ class _ReportsPageState extends State<ReportsPage> {
       ],
     );
   }
-
-  Future<void> _exportPdf(List<TransactionModel> txs) async {
-    if (txs.isEmpty) {
-      await UserFeedback.showErrorModal(context, Exception("Aucune transaction à exporter."));
-      return;
-    }
-    final file = await _pdfService.generateReport(txs, "Rapport CreditTrack");
-    if (!mounted) return;
-    await ExportShareService.sharePdf(file, subject: 'Rapport CreditTrak');
-    if (!mounted) return;
-    await UserFeedback.showSuccessModal(
-      context,
-      "PDF généré. Utilise l’app partage Android pour l’enregistrer (Fichiers, Drive, WhatsApp…).",
-    );
-  }
-
-  Future<void> _exportCsv(List<TransactionModel> txs) async {
-    if (txs.isEmpty) {
-      await UserFeedback.showErrorModal(context, Exception("Aucune transaction à exporter."));
-      return;
-    }
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/rapport_credit_trak.csv');
-    final buffer = StringBuffer('date,type,categorie,telephone_client,numero_operation,montant,commission\n');
-    for (final tx in txs) {
-      final op = tx.merchantPhone ?? '';
-      buffer.writeln(
-        '${tx.createdAt.toIso8601String()},${tx.type.name},${tx.category.name},${tx.clientPhone},$op,${tx.amount},${tx.commission}',
-      );
-    }
-    await file.writeAsString(buffer.toString());
-    if (!mounted) return;
-    await ExportShareService.shareCsv(file, subject: 'Export CreditTrak CSV');
-    if (!mounted) return;
-    await UserFeedback.showSuccessModal(
-      context,
-      "CSV généré. Choisis où l’enregistrer via le menu Partager.",
-    );
-  }
-
-  Widget _buildExportSection(List<TransactionModel> txs) {
-    return Row(
-      children: [
-        Expanded(
-          child: _ExportButton(
-            icon: Icons.picture_as_pdf_rounded,
-            label: "Export PDF",
-            color: Colors.red.shade50,
-            iconColor: Colors.red,
-            onTap: () => _exportPdf(txs),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _ExportButton(
-            icon: Icons.table_chart_rounded,
-            label: "Export CSV",
-            color: Colors.green.shade50,
-            iconColor: Colors.green,
-            onTap: () => _exportCsv(txs),
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class _LegendItem extends StatelessWidget {
@@ -322,41 +249,6 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 8),
         Text(label, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: textColor)),
       ],
-    );
-  }
-}
-
-class _ExportButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final Color iconColor;
-  final VoidCallback onTap;
-
-  const _ExportButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.iconColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-        child: Column(
-          children: [
-            Icon(icon, color: iconColor),
-            const SizedBox(height: 8),
-            Text(label, style: TextStyle(color: iconColor, fontWeight: FontWeight.bold, fontSize: 12)),
-          ],
-        ),
-      ),
     );
   }
 }

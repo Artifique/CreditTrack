@@ -8,6 +8,7 @@ import '../../controllers/transaction_controller.dart';
 import '../../models/profile_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/operation_phone_selector.dart';
+import '../operations/transaction_detail_page.dart';
 import 'widgets/activity_chart.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -74,7 +75,11 @@ class _DashboardPageState extends State<DashboardPage> {
                           const SizedBox(height: 32),
                           _buildSectionTitle("Transactions Récentes"),
                           const SizedBox(height: 16),
-                          _buildRecentTransactions(transactions),
+                          _buildRecentTransactions(
+                            context,
+                            transactions,
+                            profile?.businessName ?? 'Mon Commerce',
+                          ),
                         ],
                       ),
                     ),
@@ -208,7 +213,11 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildRecentTransactions(List<TransactionModel> transactions) {
+  Widget _buildRecentTransactions(
+    BuildContext context,
+    List<TransactionModel> transactions,
+    String businessName,
+  ) {
     if (transactions.isEmpty) {
       return const Text("Aucune transaction pour le moment.");
     }
@@ -221,43 +230,72 @@ class _DashboardPageState extends State<DashboardPage> {
       itemBuilder: (context, index) {
         final tx = recent[index];
         final isPositive = tx.type == TransactionType.retrait || tx.type == TransactionType.achat;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => TransactionDetailPage(transaction: tx, businessName: businessName),
                 ),
-                child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded, color: AppColors.primary),
+              );
+            },
+            child: Ink(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Text(tx.type.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text("Client: ${tx.clientName}",
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded, color: AppColors.primary),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(tx.type.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            "Client: ${tx.clientName}",
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                          Text(
+                            'Détail & reçu',
+                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "${isPositive ? '+' : '-'} ${_formatAmount(tx.amount)} F",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isPositive ? Colors.green : Colors.redAccent,
+                          ),
+                        ),
+                        Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              Text(
-                "${isPositive ? '+' : '-'} ${_formatAmount(tx.amount)} F",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isPositive ? Colors.green : Colors.redAccent,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },

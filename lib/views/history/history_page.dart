@@ -5,6 +5,7 @@ import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/operation_phone_selector.dart';
+import '../operations/transaction_detail_page.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -17,6 +18,7 @@ class _HistoryPageState extends State<HistoryPage> {
   final _transactionController = TransactionController();
   final _searchController = TextEditingController();
   String _categoryFilter = "Tout";
+  String _businessName = 'Mon Commerce';
 
   @override
   void initState() {
@@ -24,6 +26,7 @@ class _HistoryPageState extends State<HistoryPage> {
     _transactionController.getProfileData().then((p) {
       if (p != null && mounted) {
         OperationPhoneController.instance.syncFromProfile(p.operationPhones);
+        setState(() => _businessName = p.businessName);
       }
     });
   }
@@ -129,6 +132,14 @@ class _HistoryPageState extends State<HistoryPage> {
         final tx = transactions[index];
         return _TransactionHistoryItem(
           transaction: tx,
+          onOpenDetail: () {
+            Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => TransactionDetailPage(transaction: tx, businessName: _businessName),
+              ),
+            );
+          },
           onEdit: () => _openEditDialog(tx),
           onDelete: () => _confirmDelete(tx),
         );
@@ -323,10 +334,12 @@ class _FilterChip extends StatelessWidget {
 
 class _TransactionHistoryItem extends StatelessWidget {
   final TransactionModel transaction;
+  final VoidCallback onOpenDetail;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   const _TransactionHistoryItem({
     required this.transaction,
+    required this.onOpenDetail,
     required this.onEdit,
     required this.onDelete,
   });
@@ -337,67 +350,88 @@ class _TransactionHistoryItem extends StatelessWidget {
         transaction.type == TransactionType.retrait || transaction.type == TransactionType.achat;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              isPositive ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
-              color: isPositive ? Colors.green : Colors.red,
+          Expanded(
+            child: InkWell(
+              onTap: onOpenDetail,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        isPositive ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
+                        color: isPositive ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(transaction.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
+                            Text(
+                              "Op. ${transaction.merchantPhone}",
+                              style: TextStyle(color: AppColors.primary.withOpacity(0.9), fontSize: 11),
+                            ),
+                          Text(
+                            "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}",
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                          ),
+                          Text(
+                            'Détail & reçu',
+                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "${isPositive ? '+' : '-'} ${transaction.amount.toStringAsFixed(0)} F",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isPositive ? Colors.green : Colors.red,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(transaction.category.name, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(transaction.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
-                  Text(
-                    "Op. ${transaction.merchantPhone}",
-                    style: TextStyle(color: AppColors.primary.withOpacity(0.9), fontSize: 11),
-                  ),
-                Text(
-                  "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}",
-                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8, right: 4),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, size: 20),
+              onSelected: (v) {
+                if (v == 'edit') onEdit();
+                if (v == 'delete') onDelete();
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text("Modifier")),
+                PopupMenuItem(value: 'delete', child: Text("Supprimer")),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "${isPositive ? '+' : '-'} ${transaction.amount.toStringAsFixed(0)} F",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isPositive ? Colors.green : Colors.red,
-                  fontSize: 16,
-                ),
-              ),
-              Text(transaction.category.name, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, size: 18),
-                onSelected: (v) {
-                  if (v == 'edit') onEdit();
-                  if (v == 'delete') onDelete();
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'edit', child: Text("Modifier")),
-                  PopupMenuItem(value: 'delete', child: Text("Supprimer")),
-                ],
-              ),
-            ],
           ),
         ],
       ),
