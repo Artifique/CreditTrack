@@ -1,9 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../services/export_share_service.dart';
 import '../../widgets/operation_phone_selector.dart';
 import '../operations/transaction_detail_page.dart';
 
@@ -19,6 +25,8 @@ class _HistoryPageState extends State<HistoryPage> {
   final _searchController = TextEditingController();
   String _categoryFilter = "Tout";
   String _businessName = 'Mon Commerce';
+  DateTime? _filterFrom;
+  DateTime? _filterTo;
 
   @override
   void initState() {
@@ -44,14 +52,49 @@ class _HistoryPageState extends State<HistoryPage> {
         title: const Text("Historique", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.filter_list_rounded), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.date_range_rounded),
+            tooltip: 'Filtrer par date',
+            onPressed: _pickDateRange,
+          ),
+          IconButton(
+            icon: const Icon(Icons.table_rows_rounded),
+            tooltip: 'Exporter CSV',
+            onPressed: _exportCsv,
+          ),
         ],
       ),
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: OperationPhoneSelector(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const OperationPhoneSelector(),
+                if (_filterFrom != null || _filterTo != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Text(
+                        _dateFilterLabel(),
+                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() {
+                          _filterFrom = null;
+                          _filterTo = null;
+                        }),
+                        child: const Text('Réinitialiser dates'),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
           _buildSearchBar(),
           _buildFilterChips(),
@@ -110,14 +153,97 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  bool _inDateRange(DateTime d) {
+    final day = DateTime(d.year, d.month, d.day);
+    if (_filterFrom != null) {
+      final from = DateTime(_filterFrom!.year, _filterFrom!.month, _filterFrom!.day);
+      if (day.isBefore(from)) return false;
+    }
+    if (_filterTo != null) {
+      final to = DateTime(_filterTo!.year, _filterTo!.month, _filterTo!.day);
+      if (day.isAfter(to)) return false;
+    }
+    return true;
+  }
+
+  bool _matchesFilters(TransactionModel tx) {
+    final q = _searchController.text.trim().toLowerCase();
+    final bySearch = q.isEmpty ||
+        tx.clientName.toLowerCase().contains(q) ||
+        tx.clientPhone.contains(_searchController.text.trim()) ||
+        (tx.merchantPhone ?? '').contains(_searchController.text.trim());
+    final byCategory = _categoryFilter == 'Tout' || tx.category.name == _categoryFilter;
+    return bySearch && byCategory && _inDateRange(tx.createdAt);
+  }
+
   List<TransactionModel> _applyFilters(List<TransactionModel> transactions) {
-    return transactions.where((tx) {
-      final bySearch = _searchController.text.trim().isEmpty ||
-          tx.clientName.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          tx.clientPhone.contains(_searchController.text.trim());
-      final byCategory = _categoryFilter == "Tout" || tx.category.name == _categoryFilter;
-      return bySearch && byCategory;
-    }).toList();
+    return transactions.where(_matchesFilters).toList();
+  }
+
+  String _dateFilterLabel() {
+    final df = DateFormat('dd/MM/yyyy');
+    if (_filterFrom != null && _filterTo != null) {
+      return 'Du ${df.format(_filterFrom!)} au ${df.format(_filterTo!)}';
+    }
+    if (_filterFrom != null) return 'À partir du ${df.format(_filterFrom!)}';
+    if (_filterTo != null) return 'Jusqu’au ${df.format(_filterTo!)}';
+    return '';
+  }
+
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 1),
+      initialDateRange: _filterFrom != null && _filterTo != null
+          ? DateTimeRange(start: _filterFrom!, end: _filterTo!)
+          : null,
+    );
+    if (range == null) return;
+    setState(() {
+      _filterFrom = range.start;
+      _filterTo = range.end;
+    });
+  }
+
+  Future<void> _exportCsv() async {
+    try {
+      final phone = OperationPhoneController.instance.selectedForFilter;
+      final txs = await _transactionController.getTransactions(merchantPhone: phone, limit: 5000);
+      final filtered = txs.where(_matchesFilters).toList();
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/credittrak_historique.csv');
+      String esc(Object? v) {
+        final s = v?.toString() ?? '';
+        if (s.contains(';') || s.contains('"') || s.contains('\n')) {
+          return '"${s.replaceAll('"', '""')}"';
+        }
+        return s;
+      }
+      final lines = <String>[
+        'journal_seq;date_utc;type;category;montant;commission;client_tel;numero_operation;id',
+      ];
+      for (final t in filtered) {
+        lines.add([
+          t.journalSeq?.toString() ?? '',
+          t.createdAt.toIso8601String(),
+          TransactionModel.typeToApi(t.type),
+          t.category.name,
+          t.amount.toStringAsFixed(2),
+          t.commission.toStringAsFixed(2),
+          esc(t.clientPhone),
+          esc(t.merchantPhone),
+          esc(t.id),
+        ].join(';'));
+      }
+      await file.writeAsString(lines.join('\n'), encoding: utf8);
+      if (!mounted) return;
+      await ExportShareService.shareCsv(file, subject: 'CreditTrak — export CSV');
+    } catch (e) {
+      if (!mounted) return;
+      await UserFeedback.showErrorModal(context, e);
+    }
   }
 
   Widget _buildTransactionList(List<TransactionModel> transactions) {
@@ -175,7 +301,8 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<void> _openEditDialog(TransactionModel tx) async {
     final phoneCtrl = TextEditingController(text: tx.clientPhone);
     final amountCtrl = TextEditingController(text: tx.amount.toStringAsFixed(0));
-    TransactionCategory selectedCategory = tx.category;
+    TransactionCategory selectedCategory =
+        tx.type == TransactionType.transfertProfitUv ? TransactionCategory.UV : tx.category;
     TransactionType selectedType = tx.type;
 
     List<TransactionType> typesFor(TransactionCategory c) => c == TransactionCategory.UV
@@ -185,36 +312,19 @@ class _HistoryPageState extends State<HistoryPage> {
             TransactionType.nafama,
             TransactionType.transfertUv,
             TransactionType.transfertC2c,
+            TransactionType.transfertProfitUv,
           ]
         : [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
-
-    String typeLabel(TransactionType type) {
-      switch (type) {
-        case TransactionType.depot:
-          return "Depot";
-        case TransactionType.retrait:
-          return "Retrait";
-        case TransactionType.nafama:
-          return "Nafama";
-        case TransactionType.transfertUv:
-          return "Transfert UV";
-        case TransactionType.transfertC2c:
-          return "Transfert C2C";
-        case TransactionType.achat:
-          return "Achat";
-        case TransactionType.forfait:
-          return "Forfait";
-        case TransactionType.sewa:
-          return "Sewa";
-      }
-    }
 
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setLocalState) {
           final allowed = typesFor(selectedCategory);
-          if (!allowed.contains(selectedType)) selectedType = allowed.first;
+          if (!allowed.contains(selectedType)) {
+            selectedType = allowed.first;
+          }
+          final lockCategory = selectedType == TransactionType.transfertProfitUv;
           return AlertDialog(
             title: const Text("Modifier la transaction"),
             content: SingleChildScrollView(
@@ -228,31 +338,52 @@ class _HistoryPageState extends State<HistoryPage> {
                       DropdownMenuItem(value: TransactionCategory.UV, child: Text("UV")),
                       DropdownMenuItem(value: TransactionCategory.CREDIT, child: Text("CREDIT")),
                     ],
-                    onChanged: (v) {
-                      if (v == null) return;
-                      setLocalState(() {
-                        selectedCategory = v;
-                      });
-                    },
+                    onChanged: lockCategory
+                        ? null
+                        : (v) {
+                            if (v == null) return;
+                            setLocalState(() {
+                              selectedCategory = v;
+                            });
+                          },
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<TransactionType>(
                     value: selectedType,
                     decoration: const InputDecoration(labelText: "Type"),
                     items: allowed
-                        .map((e) => DropdownMenuItem<TransactionType>(value: e, child: Text(typeLabel(e))))
+                        .map(
+                          (e) => DropdownMenuItem<TransactionType>(
+                            value: e,
+                            child: Text(TransactionModel.typeDisplayName(e)),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) {
                       if (v == null) return;
-                      setLocalState(() => selectedType = v);
+                      setLocalState(() {
+                        selectedType = v;
+                        if (v == TransactionType.transfertProfitUv) {
+                          selectedCategory = TransactionCategory.UV;
+                        }
+                      });
                     },
                   ),
                   const SizedBox(height: 12),
-                  TextField(
-                    controller: phoneCtrl,
-                    decoration: const InputDecoration(labelText: "Téléphone client"),
-                    keyboardType: TextInputType.phone,
-                  ),
+                  if (selectedType == TransactionType.transfertProfitUv)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Numéro d’opération : ${tx.merchantPhone ?? "—"}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    )
+                  else
+                    TextField(
+                      controller: phoneCtrl,
+                      decoration: const InputDecoration(labelText: "Téléphone client"),
+                      keyboardType: TextInputType.phone,
+                    ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: amountCtrl,
@@ -273,10 +404,17 @@ class _HistoryPageState extends State<HistoryPage> {
 
     if (saved != true) return;
 
-    final amount = double.tryParse(amountCtrl.text.trim()) ?? 0;
-    if (phoneCtrl.text.trim().isEmpty || amount <= 0) {
-      await UserFeedback.showErrorModal(context, Exception("Montant et téléphone sont requis."));
+    final amount = double.tryParse(amountCtrl.text.trim().replaceAll(' ', '')) ?? 0;
+    if (amount <= 0) {
+      await UserFeedback.showErrorModal(context, Exception('Montant strictement positif requis.'));
       return;
+    }
+    if (selectedType != TransactionType.transfertProfitUv) {
+      final digits = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
+      if (phoneCtrl.text.trim().isEmpty || digits.length < 9) {
+        await UserFeedback.showErrorModal(context, Exception('Téléphone client invalide (≥ 9 chiffres).'));
+        return;
+      }
     }
 
     try {
@@ -285,8 +423,10 @@ class _HistoryPageState extends State<HistoryPage> {
         userId: tx.userId,
         type: selectedType,
         category: selectedCategory,
-        clientName: tx.clientName,
-        clientPhone: phoneCtrl.text.trim(),
+        clientName: selectedType == TransactionType.transfertProfitUv ? 'Transfert interne' : tx.clientName,
+        clientPhone: selectedType == TransactionType.transfertProfitUv
+            ? (tx.merchantPhone ?? tx.clientPhone)
+            : phoneCtrl.text.trim(),
         merchantPhone: tx.merchantPhone,
         amount: amount,
         commission: TransactionModel.calculateCommission(selectedType, amount),
@@ -346,8 +486,10 @@ class _TransactionHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive =
-        transaction.type == TransactionType.retrait || transaction.type == TransactionType.achat;
+    final isPositive = transaction.type == TransactionType.retrait ||
+        transaction.type == TransactionType.achat ||
+        transaction.type == TransactionType.transfertUv ||
+        transaction.type == TransactionType.transfertProfitUv;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -389,7 +531,8 @@ class _TransactionHistoryItem extends StatelessWidget {
                               style: TextStyle(color: AppColors.primary.withOpacity(0.9), fontSize: 11),
                             ),
                           Text(
-                            "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}",
+                            "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}"
+                            "${transaction.journalSeq != null ? ' · N°${transaction.journalSeq}' : ''}",
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                           ),
                           Text(

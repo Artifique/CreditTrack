@@ -85,7 +85,9 @@ class ReceiptPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Divider(color: variant.withOpacity(0.3)),
-                    _line(context, 'Type', transaction.type.name.toUpperCase()),
+                    if (transaction.journalSeq != null)
+                      _line(context, 'N° journal', '#${transaction.journalSeq}'),
+                    _line(context, 'Type', TransactionModel.typeDisplayName(transaction.type)),
                     _line(context, 'Catégorie', transaction.category.name),
                     _line(context, 'Téléphone', transaction.clientPhone),
                     _line(context, 'Montant', '${transaction.amount.toStringAsFixed(0)} CFA'),

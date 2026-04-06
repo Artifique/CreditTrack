@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_logger.dart';
+import '../models/operation_phone_wallet_model.dart';
 import '../models/profile_model.dart';
 import '../models/transaction_model.dart';
 
@@ -29,8 +30,67 @@ class TransactionController {
           if (phone != null && phone.isNotEmpty) {
             list = list.where((t) => (t.merchantPhone ?? '').trim() == phone).toList();
           }
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
           return list;
         });
+  }
+
+  static String mapTransactionError(Object e) {
+    final s = e.toString();
+    if (s.contains('SOLDE_INSUFFISANT')) {
+      return 'Solde insuffisant : cette opération rendrait le solde négatif.';
+    }
+    if (s.contains('MERCHANT_PHONE_REQUIRED')) {
+      return 'Le numéro d’opération est obligatoire pour enregistrer une transaction.';
+    }
+    if (s.contains('Montant supérieur au bénéfice UV')) {
+      return 'Montant supérieur au bénéfice UV disponible sur ce numéro.';
+    }
+    if (s.contains('Les soldes ne peuvent pas être négatifs')) {
+      return 'Les soldes saisis ne peuvent pas être négatifs.';
+    }
+    return s;
+  }
+
+  /// Vue des soldes / bénéfices : par [merchantPhone] si renseigné, sinon totaux profil + somme des bénéfices.
+  Future<OperationPhoneWalletModel> getWalletViewForFilter({String? merchantPhone}) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return OperationPhoneWalletModel.empty;
+
+    final phone = merchantPhone?.trim();
+    if (phone != null && phone.isNotEmpty) {
+      final row = await _supabase
+          .from('operation_phone_wallets')
+          .select()
+          .eq('user_id', userId)
+          .eq('phone', phone)
+          .maybeSingle();
+      if (row == null) {
+        return OperationPhoneWalletModel(phone: phone, soldeUv: 0, soldeCredit: 0, profitUv: 0, profitCredit: 0);
+      }
+      return OperationPhoneWalletModel.fromJson(row);
+    }
+
+    final profile = await getProfileData();
+    final rows = await _supabase.from('operation_phone_wallets').select('profit_uv, profit_credit').eq('user_id', userId);
+
+    var pu = 0.0;
+    var pc = 0.0;
+    if (rows is List) {
+      for (final r in rows) {
+        final m = r as Map<String, dynamic>;
+        pu += (m['profit_uv'] as num?)?.toDouble() ?? 0;
+        pc += (m['profit_credit'] as num?)?.toDouble() ?? 0;
+      }
+    }
+
+    return OperationPhoneWalletModel(
+      phone: '',
+      soldeUv: profile?.soldeUv ?? 0,
+      soldeCredit: profile?.soldeCredit ?? 0,
+      profitUv: pu,
+      profitCredit: pc,
+    );
   }
 
   // Récupérer le profil (et donc les soldes) de l'utilisateur
@@ -55,7 +115,7 @@ class TransactionController {
       return TransactionModel.fromJson(response);
     } catch (e, st) {
       AppLogger.error('Echec insertion transaction', e, st);
-      throw Exception("Erreur lors de l'ajout de la transaction : $e");
+      throw Exception(mapTransactionError(e));
     }
   }
 
@@ -83,7 +143,7 @@ class TransactionController {
       return TransactionModel.fromJson((response as List).first as Map<String, dynamic>);
     } catch (e, st) {
       AppLogger.error('Echec modification transaction', e, st);
-      throw Exception("Erreur lors de la modification de la transaction : $e");
+      throw Exception(mapTransactionError(e));
     }
   }
 
@@ -99,7 +159,7 @@ class TransactionController {
       });
     } catch (e, st) {
       AppLogger.error('Echec suppression transaction', e, st);
-      throw Exception("Erreur lors de la suppression de la transaction : $e");
+      throw Exception(mapTransactionError(e));
     }
   }
 

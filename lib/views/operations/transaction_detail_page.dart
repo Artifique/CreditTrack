@@ -19,27 +19,6 @@ class TransactionDetailPage extends StatelessWidget {
     required this.businessName,
   });
 
-  static String typeLabel(TransactionType type) {
-    switch (type) {
-      case TransactionType.depot:
-        return 'Dépôt';
-      case TransactionType.retrait:
-        return 'Retrait';
-      case TransactionType.nafama:
-        return 'Nafama';
-      case TransactionType.transfertUv:
-        return 'Transfert UV';
-      case TransactionType.transfertC2c:
-        return 'Transfert C2C';
-      case TransactionType.achat:
-        return 'Achat crédit';
-      case TransactionType.forfait:
-        return 'Forfait';
-      case TransactionType.sewa:
-        return 'Sewa';
-    }
-  }
-
   Future<void> _downloadPdf(BuildContext context) async {
     final file = await PdfService().generateReceipt(transaction, businessName);
     await ExportShareService.sharePdf(file, subject: 'Reçu CreditTrak');
@@ -100,7 +79,9 @@ class TransactionDetailPage extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: onSurface),
                 ),
                 const SizedBox(height: 16),
-                _row('Type', typeLabel(transaction.type), variant, onSurface),
+                if (transaction.journalSeq != null)
+                  _row('N° journal', '#${transaction.journalSeq}', variant, onSurface),
+                _row('Type', TransactionModel.typeDisplayName(transaction.type), variant, onSurface),
                 _row('Catégorie', transaction.category.name, variant, onSurface),
                 _row('Client', transaction.clientName, variant, onSurface),
                 _row('Téléphone', transaction.clientPhone, variant, onSurface),

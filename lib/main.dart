@@ -12,6 +12,7 @@ import 'views/settings/settings_page.dart';
 import 'views/settings/business_profile_page.dart';
 import 'views/settings/printer_settings_page.dart';
 import 'views/reports/reports_page.dart';
+import 'models/new_transaction_route_args.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,11 @@ class CreditTrakApp extends StatelessWidget {
             '/login': (context) => const LoginPage(),
             '/signup': (context) => const SignUpPage(),
             '/dashboard': (context) => const DashboardPage(),
-            '/new-transaction': (context) => const NewTransactionPage(),
+            '/new-transaction': (context) {
+              final args = ModalRoute.of(context)?.settings.arguments;
+              final a = args is NewTransactionRouteArgs ? args : null;
+              return NewTransactionPage(routeArgs: a);
+            },
             '/history': (context) => const HistoryPage(),
             '/settings': (context) => const SettingsPage(),
             '/settings-business': (context) => const BusinessProfilePage(),

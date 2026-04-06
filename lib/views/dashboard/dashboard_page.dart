@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme.dart';
@@ -5,6 +7,8 @@ import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/settings_controller.dart';
 import '../../controllers/theme_mode_controller.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../models/new_transaction_route_args.dart';
+import '../../models/operation_phone_wallet_model.dart';
 import '../../models/profile_model.dart';
 import '../../models/transaction_model.dart';
 import '../../widgets/operation_phone_selector.dart';
@@ -22,10 +26,14 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final _transactionController = TransactionController();
   late Future<ProfileModel?> _profileFuture;
+  OperationPhoneWalletModel _wallet = OperationPhoneWalletModel.empty;
+  Timer? _walletDebounce;
+  String _lastTxSigForWallet = '';
 
   @override
   void initState() {
     super.initState();
+    OperationPhoneController.instance.addListener(_scheduleWalletRefresh);
     _profileFuture = _transactionController.getProfileData();
     _profileFuture.then((p) {
       if (p != null) {
@@ -35,6 +43,26 @@ class _DashboardPageState extends State<DashboardPage> {
     SettingsController().getBusinessSettings().then((s) {
       if (mounted) ThemeModeController.instance.applyFromRemote(s.darkMode);
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) => _pullWallet());
+  }
+
+  @override
+  void dispose() {
+    OperationPhoneController.instance.removeListener(_scheduleWalletRefresh);
+    _walletDebounce?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleWalletRefresh() {
+    _walletDebounce?.cancel();
+    _walletDebounce = Timer(const Duration(milliseconds: 200), _pullWallet);
+  }
+
+  Future<void> _pullWallet() async {
+    final w = await _transactionController.getWalletViewForFilter(
+      merchantPhone: OperationPhoneController.instance.selectedForFilter,
+    );
+    if (mounted) setState(() => _wallet = w);
   }
 
   @override
@@ -52,7 +80,15 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               builder: (context, txSnapshot) {
                 final transactions = txSnapshot.data ?? [];
-                final totalProfit = transactions.fold<double>(0, (sum, tx) => sum + tx.commission);
+                final txSig = transactions.map((e) => '${e.id}_${e.amount}_${e.merchantPhone}').join('|');
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted || txSig == _lastTxSigForWallet) return;
+                  _lastTxSigForWallet = txSig;
+                  _scheduleWalletRefresh();
+                });
+
+                final sel = OperationPhoneController.instance.selectedForFilter;
+                final lowUv = sel != null && _wallet.soldeUv > 0 && _wallet.soldeUv < 10000;
 
                 return Scaffold(
                   body: CustomScrollView(
@@ -65,8 +101,64 @@ class _DashboardPageState extends State<DashboardPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const OperationPhoneSelector(),
+                              if (sel == null && _wallet.profitUv > 0) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Sélectionne un numéro d’opération pour utiliser « Transférer profit UV ».',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                              if (lowUv) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.withOpacity(0.14),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.amber.withOpacity(0.4)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 22),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          'Solde UV faible sur ce numéro — vérifie avant dépôts / transferts sortants.',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Theme.of(context).colorScheme.onSurface,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 16),
-                              _buildBalanceCards(profile, totalProfit),
+                              _buildBalanceCards(_wallet),
+                              if (sel != null && _wallet.profitUv > 0) ...[
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.tonalIcon(
+                                    onPressed: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/new-transaction',
+                                        arguments: NewTransactionRouteArgs(
+                                          initialType: TransactionType.transfertProfitUv,
+                                          suggestedProfitUvAmount: _wallet.profitUv,
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.savings_outlined),
+                                    label: const Text('Transférer profit UV'),
+                                  ),
+                                ),
+                              ],
                           const SizedBox(height: 32),
                           ActivityChart(transactions: transactions),
                           const SizedBox(height: 32),
@@ -138,30 +230,37 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildBalanceCards(ProfileModel? profile, double totalProfit) {
+  Widget _buildBalanceCards(OperationPhoneWalletModel w) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           _BalanceCard(
-            title: "Solde UV",
-            amount: _formatAmount(profile?.soldeUv ?? 0),
+            title: 'Solde UV',
+            amount: _formatAmount(w.soldeUv),
             gradient: AppColors.cardGradientUV,
             icon: Icons.account_balance_wallet_outlined,
           ),
           const SizedBox(width: 16),
           _BalanceCard(
-            title: "Solde Crédit",
-            amount: _formatAmount(profile?.soldeCredit ?? 0),
+            title: 'Solde crédit',
+            amount: _formatAmount(w.soldeCredit),
             gradient: AppColors.cardGradientCredit,
             icon: Icons.phone_android_outlined,
           ),
           const SizedBox(width: 16),
           _BalanceCard(
-            title: "Bénéfice Total", // NOUVEAU v1.1
-            amount: _formatAmount(totalProfit),
-            gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]), // Orange Ambre
+            title: 'Bénéfice UV',
+            amount: _formatAmount(w.profitUv),
+            gradient: const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
             icon: Icons.trending_up_rounded,
+          ),
+          const SizedBox(width: 16),
+          _BalanceCard(
+            title: 'Bénéfice crédit',
+            amount: _formatAmount(w.profitCredit),
+            gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF4F46E5)]),
+            icon: Icons.stacked_line_chart_rounded,
           ),
         ],
       ),
@@ -220,14 +319,18 @@ class _DashboardPageState extends State<DashboardPage> {
       return const Text("Aucune transaction pour le moment.");
     }
 
-    final recent = transactions.take(3).toList();
+    final sorted = [...transactions]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recent = sorted.take(3).toList();
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: recent.length,
       itemBuilder: (context, index) {
         final tx = recent[index];
-        final isPositive = tx.type == TransactionType.retrait || tx.type == TransactionType.achat;
+        final isPositive = tx.type == TransactionType.retrait ||
+            tx.type == TransactionType.achat ||
+            tx.type == TransactionType.transfertUv ||
+            tx.type == TransactionType.transfertProfitUv;
         return Material(
           color: Colors.transparent,
           child: InkWell(
@@ -265,7 +368,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(tx.type.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            TransactionModel.typeDisplayName(tx.type),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           Text(
                             "Client: ${tx.clientName}",
                             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),

@@ -44,7 +44,11 @@ class BluetoothPrinterService {
     bluetooth.printCustom(businessName.toUpperCase(), 3, 1); // Taille 3, Centré
     bluetooth.printNewLine();
     bluetooth.printCustom("--------------------------------", 1, 1);
-    bluetooth.printCustom("TYPE: ${transaction.type.name.toUpperCase()}", 2, 0);
+    if (transaction.journalSeq != null) {
+      bluetooth.printCustom("N° JOURNAL: #${transaction.journalSeq}", 2, 0);
+    }
+    bluetooth.printCustom(
+        "TYPE: ${TransactionModel.typeDisplayName(transaction.type).toUpperCase()}", 2, 0);
     bluetooth.printCustom("CLIENT: ${transaction.clientName}", 1, 0);
     bluetooth.printCustom("TEL: ${transaction.clientPhone}", 1, 0);
     bluetooth.printCustom("--------------------------------", 1, 1);

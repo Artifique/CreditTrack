@@ -4,13 +4,16 @@ import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../models/new_transaction_route_args.dart';
 import '../../models/transaction_model.dart';
 import '../../services/export_share_service.dart';
 import '../../services/pdf_service.dart';
 import 'receipt_page.dart';
 
 class NewTransactionPage extends StatefulWidget {
-  const NewTransactionPage({super.key});
+  final NewTransactionRouteArgs? routeArgs;
+
+  const NewTransactionPage({super.key, this.routeArgs});
 
   @override
   State<NewTransactionPage> createState() => _NewTransactionPageState();
@@ -35,6 +38,26 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     super.initState();
     _amountController.addListener(_updateCommission);
     _loadOperationPhones();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final a = widget.routeArgs;
+      if (a?.initialType == null || !mounted) return;
+      setState(() {
+        _selectedCategory = 'UV';
+        _selectedType = a!.initialType!;
+        final hint = a.suggestedProfitUvAmount;
+        if (hint != null && hint > 0) {
+          _amountController.text = hint.floor().toString();
+        }
+      });
+      _updateCommission();
+    });
+  }
+
+  bool get _isProfitTransfer => _selectedType == TransactionType.transfertProfitUv;
+
+  bool _isValidPhoneDigits(String raw) {
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    return digits.length >= 9;
   }
 
   Future<void> _loadOperationPhones() async {
@@ -68,10 +91,19 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       return;
     }
 
-    final amount = double.tryParse(_amountController.text.trim()) ?? 0;
-    if (_clientPhoneController.text.trim().isEmpty || amount <= 0) {
-      UserFeedback.showErrorModal(context, Exception("Complète les champs requis."));
+    final amount = double.tryParse(_amountController.text.trim().replaceAll(' ', '')) ?? 0;
+    if (amount <= 0) {
+      UserFeedback.showErrorModal(context, Exception('Indique un montant strictement positif.'));
       return;
+    }
+    if (!_isProfitTransfer) {
+      if (_clientPhoneController.text.trim().isEmpty || !_isValidPhoneDigits(_clientPhoneController.text)) {
+        UserFeedback.showErrorModal(
+          context,
+          Exception('Numéro client invalide (au moins 9 chiffres).'),
+        );
+        return;
+      }
     }
     if (_operationPhones.isNotEmpty &&
         (_selectedMerchantPhone == null || _selectedMerchantPhone!.trim().isEmpty)) {
@@ -82,12 +114,16 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       return;
     }
 
+    final clientPhone = _isProfitTransfer
+        ? (_selectedMerchantPhone?.trim().isNotEmpty == true ? _selectedMerchantPhone!.trim() : 'Profit UV')
+        : _clientPhoneController.text.trim();
+
     final transaction = TransactionModel(
       userId: userId,
       type: _selectedType,
       category: _selectedCategory == 'UV' ? TransactionCategory.UV : TransactionCategory.CREDIT,
-      clientName: "Client",
-      clientPhone: _clientPhoneController.text.trim(),
+      clientName: _isProfitTransfer ? 'Transfert interne' : 'Client',
+      clientPhone: clientPhone,
       merchantPhone: _selectedMerchantPhone?.trim().isNotEmpty == true
           ? _selectedMerchantPhone!.trim()
           : null,
@@ -147,17 +183,20 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
-                    "Tu peux enregistrer jusqu'à 3 numéros d'opération dans Profil commerce pour les associer à tes transactions.",
+                    "Enregistre au moins un numéro d'opération et ses soldes dans Profil commerce : "
+                    "il est obligatoire pour chaque transaction.",
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary.withOpacity(0.95)),
                   ),
                 ),
-              _buildInputField(
-                label: "Numéro de Téléphone",
-                hint: "77 000 00 00",
-                icon: Icons.phone_android_rounded,
-                keyboardType: TextInputType.phone,
-                controller: _clientPhoneController,
-              ),
+              if (!_isProfitTransfer)
+                _buildInputField(
+                  label: 'Numéro de téléphone client',
+                  hint: '77 000 00 00',
+                  icon: Icons.phone_android_rounded,
+                  keyboardType: TextInputType.phone,
+                  controller: _clientPhoneController,
+                ),
+              if (!_isProfitTransfer) const SizedBox(height: 20),
               const SizedBox(height: 20),
               _buildInputField(
                 label: "Montant (CFA)",
@@ -168,7 +207,10 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                 controller: _amountController,
               ),
               const SizedBox(height: 24),
-              _buildCommissionPreview(), // NOUVEAU v1.1
+              if (_isProfitTransfer)
+                _buildProfitTransferHint()
+              else
+                _buildCommissionPreview(),
               const SizedBox(height: 48),
               _buildSubmitButton(),
             ],
@@ -212,6 +254,32 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     );
   }
 
+  Widget _buildProfitTransferHint() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.teal.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.teal.withOpacity(0.25)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Transfert profit UV',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Le montant est ajouté à ton solde UV sur le numéro d’opération choisi et déduit de ton bénéfice UV. '
+            'Aucune commission sur cette opération.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCommissionPreview() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -247,7 +315,17 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           isSelected: _selectedCategory == 'UV',
           onTap: () => setState(() {
             _selectedCategory = 'UV';
-            _selectedType = TransactionType.depot;
+            const uvTypes = [
+              TransactionType.depot,
+              TransactionType.retrait,
+              TransactionType.nafama,
+              TransactionType.transfertUv,
+              TransactionType.transfertC2c,
+              TransactionType.transfertProfitUv,
+            ];
+            if (!uvTypes.contains(_selectedType)) {
+              _selectedType = TransactionType.depot;
+            }
             _updateCommission();
           }),
         ),
@@ -257,7 +335,10 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           isSelected: _selectedCategory == 'CREDIT',
           onTap: () => setState(() {
             _selectedCategory = 'CREDIT';
-            _selectedType = TransactionType.achat;
+            const crTypes = [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
+            if (!crTypes.contains(_selectedType)) {
+              _selectedType = TransactionType.achat;
+            }
             _updateCommission();
           }),
         ),
@@ -273,6 +354,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             TransactionType.nafama,
             TransactionType.transfertUv,
             TransactionType.transfertC2c,
+            TransactionType.transfertProfitUv,
           ]
         : [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
 
@@ -315,6 +397,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         return "FORFAIT";
       case TransactionType.sewa:
         return "SEWA";
+      case TransactionType.transfertProfitUv:
+        return "PROFIT UV";
     }
   }
 
@@ -393,10 +477,17 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             const SizedBox(height: 24),
             const Text("Opération Réussie !", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-            Text(
-              "Commission générée : ${_estimatedCommission.toStringAsFixed(0)} F",
-              style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
-            ),
+            if (_createdTransaction?.type == TransactionType.transfertProfitUv)
+              Text(
+                'Montant versé sur le solde UV : ${(_createdTransaction?.amount ?? 0).toStringAsFixed(0)} F',
+                style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              )
+            else
+              Text(
+                "Commission générée : ${_estimatedCommission.toStringAsFixed(0)} F",
+                style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
+              ),
             const SizedBox(height: 12),
             const Text("La transaction a été enregistrée avec succès.", textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 32),

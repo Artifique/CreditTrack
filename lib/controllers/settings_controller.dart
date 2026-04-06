@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/app_logger.dart';
 import '../models/business_settings_model.dart';
+import '../models/operation_phone_wallet_model.dart';
 import '../models/profile_model.dart';
 
 class SettingsController {
@@ -17,6 +18,37 @@ class SettingsController {
     final response = await _supabase.from('profiles').select().eq('id', userId).maybeSingle();
     if (response == null) return null;
     return ProfileModel.fromJson(response);
+  }
+
+  Future<OperationPhoneWalletModel?> getOperationPhoneWallet(String phone) async {
+    final userId = _userId;
+    if (userId == null) return null;
+    final p = phone.trim();
+    if (p.isEmpty) return null;
+    final row = await _supabase
+        .from('operation_phone_wallets')
+        .select()
+        .eq('user_id', userId)
+        .eq('phone', p)
+        .maybeSingle();
+    if (row == null) {
+      return OperationPhoneWalletModel(phone: p, soldeUv: 0, soldeCredit: 0, profitUv: 0, profitCredit: 0);
+    }
+    return OperationPhoneWalletModel.fromJson(row);
+  }
+
+  /// Met à jour les soldes UV / crédit du numéro (ne modifie pas les bénéfices cumulés).
+  Future<void> setOperationPhoneBalances({
+    required String phone,
+    required double soldeUv,
+    required double soldeCredit,
+  }) async {
+    if (_userId == null) throw Exception('Utilisateur non connecté.');
+    await _supabase.rpc('set_operation_phone_balances', params: {
+      'p_phone': phone.trim(),
+      'p_solde_uv': soldeUv,
+      'p_solde_credit': soldeCredit,
+    });
   }
 
   Future<void> updateProfile({

@@ -23,11 +23,21 @@ class PdfService {
               pw.SizedBox(height: 5),
               pw.Text("---------------------------------"),
               pw.SizedBox(height: 10),
-              pw.Row(
+                  if (transaction.journalSeq != null) ...[
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text("N° journal:"),
+                        pw.Text("#${transaction.journalSeq}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      ],
+                    ),
+                  ],
+                  pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("Type:"),
-                  pw.Text(transaction.type.name.toUpperCase(), style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text(TransactionModel.typeDisplayName(transaction.type).toUpperCase(),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Row(
