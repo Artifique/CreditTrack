@@ -90,7 +90,12 @@ class ReceiptPage extends StatelessWidget {
                     _line(context, 'Type', TransactionModel.typeDisplayName(transaction.type)),
                     _line(context, 'Catégorie', transaction.category.name),
                     _line(context, 'Téléphone', transaction.clientPhone),
-                    _line(context, 'Montant', '${transaction.amount.toStringAsFixed(0)} CFA'),
+                    _line(
+                      context,
+                      'Montant',
+                      '${transaction.amount.toStringAsFixed(0)} CFA',
+                      valueColor: transaction.type.amountDisplayColor(onSurface),
+                    ),
                     _line(context, 'Commission', '${transaction.commission.toStringAsFixed(0)} CFA'),
                     _line(context, 'Date', date),
                   ],
@@ -144,16 +149,17 @@ class ReceiptPage extends StatelessWidget {
     );
   }
 
-  Widget _line(BuildContext context, String label, String value) {
+  Widget _line(BuildContext context, String label, String value, {Color? valueColor}) {
     final variant = Theme.of(context).colorScheme.onSurfaceVariant;
     final onSurface = Theme.of(context).colorScheme.onSurface;
+    final vc = valueColor ?? onSurface;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: variant)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: onSurface)),
+          Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: vc)),
         ],
       ),
     );

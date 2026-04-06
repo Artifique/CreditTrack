@@ -573,3 +573,19 @@ revoke all on function public.set_operation_phone_balances(text, numeric, numeri
 grant execute on function public.set_operation_phone_balances(text, numeric, numeric) to authenticated;
 revoke all on function public.refresh_totals_from_phone_wallets(uuid) from public;
 grant execute on function public.refresh_totals_from_phone_wallets(uuid) to authenticated;
+
+-- =========================
+-- 7) Droits RLS user_journal_counter (évite permission denied sur INSERT transaction)
+-- =========================
+grant select, insert, update, delete on public.user_journal_counter to authenticated;
+
+alter table public.user_journal_counter enable row level security;
+
+drop policy if exists user_journal_counter_own on public.user_journal_counter;
+create policy user_journal_counter_own on public.user_journal_counter
+for all
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+grant select, insert, update, delete on public.operation_phone_wallets to authenticated;

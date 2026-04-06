@@ -411,8 +411,8 @@ class _HistoryPageState extends State<HistoryPage> {
     }
     if (selectedType != TransactionType.transfertProfitUv) {
       final digits = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
-      if (phoneCtrl.text.trim().isEmpty || digits.length < 9) {
-        await UserFeedback.showErrorModal(context, Exception('Téléphone client invalide (≥ 9 chiffres).'));
+      if (phoneCtrl.text.trim().isEmpty || digits.length < 8) {
+        await UserFeedback.showErrorModal(context, Exception('Téléphone client invalide (au moins 8 chiffres).'));
         return;
       }
     }
@@ -486,10 +486,27 @@ class _TransactionHistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = transaction.type == TransactionType.retrait ||
-        transaction.type == TransactionType.achat ||
-        transaction.type == TransactionType.transfertUv ||
-        transaction.type == TransactionType.transfertProfitUv;
+    final scheme = Theme.of(context).colorScheme;
+    final t = transaction.type;
+    final isDepot = t == TransactionType.depot;
+    final isRetrait = t == TransactionType.retrait;
+    late final Color iconBg;
+    late final Color iconFg;
+    late final IconData iconData;
+    if (isDepot) {
+      iconBg = Colors.red.shade50;
+      iconFg = Colors.red;
+      iconData = Icons.arrow_downward_rounded;
+    } else if (isRetrait) {
+      iconBg = Colors.green.shade50;
+      iconFg = Colors.green;
+      iconData = Icons.arrow_upward_rounded;
+    } else {
+      iconBg = scheme.surfaceContainerHighest;
+      iconFg = scheme.primary;
+      iconData = Icons.receipt_long_rounded;
+    }
+    final amountColor = t.amountDisplayColor(scheme.onSurface);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -511,13 +528,10 @@ class _TransactionHistoryItem extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
+                        color: iconBg,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(
-                        isPositive ? Icons.add_circle_outline_rounded : Icons.remove_circle_outline_rounded,
-                        color: isPositive ? Colors.green : Colors.red,
-                      ),
+                      child: Icon(iconData, color: iconFg),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -546,10 +560,10 @@ class _TransactionHistoryItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          "${isPositive ? '+' : '-'} ${transaction.amount.toStringAsFixed(0)} F",
+                          "${transaction.amount.toStringAsFixed(0)} F",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: isPositive ? Colors.green : Colors.red,
+                            color: amountColor,
                             fontSize: 16,
                           ),
                         ),

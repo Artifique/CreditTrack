@@ -327,10 +327,27 @@ class _DashboardPageState extends State<DashboardPage> {
       itemCount: recent.length,
       itemBuilder: (context, index) {
         final tx = recent[index];
-        final isPositive = tx.type == TransactionType.retrait ||
-            tx.type == TransactionType.achat ||
-            tx.type == TransactionType.transfertUv ||
-            tx.type == TransactionType.transfertProfitUv;
+        final scheme = Theme.of(context).colorScheme;
+        final t = tx.type;
+        final isDepot = t == TransactionType.depot;
+        final isRetrait = t == TransactionType.retrait;
+        late final Color iconBg;
+        late final Color iconFg;
+        late final IconData iconData;
+        if (isDepot) {
+          iconBg = Colors.red.shade50;
+          iconFg = Colors.red;
+          iconData = Icons.arrow_downward_rounded;
+        } else if (isRetrait) {
+          iconBg = Colors.green.shade50;
+          iconFg = Colors.green;
+          iconData = Icons.arrow_upward_rounded;
+        } else {
+          iconBg = scheme.surfaceContainerHighest;
+          iconFg = scheme.primary;
+          iconData = Icons.receipt_long_rounded;
+        }
+        final amountColor = t.amountDisplayColor(scheme.onSurface);
         return Material(
           color: Colors.transparent,
           child: InkWell(
@@ -358,10 +375,10 @@ class _DashboardPageState extends State<DashboardPage> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        color: iconBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(isPositive ? Icons.add_rounded : Icons.remove_rounded, color: AppColors.primary),
+                      child: Icon(iconData, color: iconFg),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -387,10 +404,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          "${isPositive ? '+' : '-'} ${_formatAmount(tx.amount)} F",
+                          "${_formatAmount(tx.amount)} F",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: isPositive ? Colors.green : Colors.redAccent,
+                            color: amountColor,
                           ),
                         ),
                         Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),

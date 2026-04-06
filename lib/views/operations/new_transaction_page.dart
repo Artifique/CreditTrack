@@ -57,7 +57,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
 
   bool _isValidPhoneDigits(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
-    return digits.length >= 9;
+    return digits.length >= 8;
   }
 
   Future<void> _loadOperationPhones() async {
@@ -100,7 +100,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       if (_clientPhoneController.text.trim().isEmpty || !_isValidPhoneDigits(_clientPhoneController.text)) {
         UserFeedback.showErrorModal(
           context,
-          Exception('Numéro client invalide (au moins 9 chiffres).'),
+          Exception('Numéro client invalide (au moins 8 chiffres).'),
         );
         return;
       }
@@ -485,7 +485,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
               )
             else
               Text(
-                "Commission générée : ${_estimatedCommission.toStringAsFixed(0)} F",
+                "Commission générée : + ${_estimatedCommission.toStringAsFixed(0)} F",
                 style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold),
               ),
             const SizedBox(height: 12),

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum TransactionType {
   depot,
   retrait,
@@ -160,5 +162,19 @@ class TransactionModel {
       'note': note,
       'created_at': createdAt.toIso8601String(),
     };
+  }
+}
+
+/// Affichage liste / détail : rouge pour dépôt, vert pour retrait ; sinon couleur neutre.
+extension TransactionTypeAmountStyle on TransactionType {
+  Color amountDisplayColor(Color neutral) {
+    switch (this) {
+      case TransactionType.depot:
+        return Colors.red;
+      case TransactionType.retrait:
+        return Colors.green;
+      default:
+        return neutral;
+    }
   }
 }

@@ -87,7 +87,13 @@ class TransactionDetailPage extends StatelessWidget {
                 _row('Téléphone', transaction.clientPhone, variant, onSurface),
                 if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
                   _row('N° opération', transaction.merchantPhone!, variant, onSurface),
-                _row('Montant', '${NumberFormat('#,##0', 'fr_FR').format(transaction.amount)} CFA', variant, onSurface),
+                _row(
+                  'Montant',
+                  '${NumberFormat('#,##0', 'fr_FR').format(transaction.amount)} CFA',
+                  variant,
+                  onSurface,
+                  valueColor: transaction.type.amountDisplayColor(onSurface),
+                ),
                 _row('Commission', '${NumberFormat('#,##0', 'fr_FR').format(transaction.commission)} CFA', variant, onSurface),
                 _row('Solde après', '${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeApres)} CFA', variant, onSurface),
                 if (transaction.note != null && transaction.note!.trim().isNotEmpty)
@@ -126,7 +132,8 @@ class TransactionDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _row(String label, String value, Color variant, Color onSurface) {
+  Widget _row(String label, String value, Color variant, Color onSurface, {Color? valueColor}) {
+    final vc = valueColor ?? onSurface;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -137,7 +144,7 @@ class TransactionDetailPage extends StatelessWidget {
             child: Text(label, style: TextStyle(color: variant, fontSize: 13)),
           ),
           Expanded(
-            child: Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: onSurface, fontSize: 14)),
+            child: Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: vc, fontSize: 14)),
           ),
         ],
       ),
