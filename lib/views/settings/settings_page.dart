@@ -67,6 +67,12 @@ class _SettingsPageState extends State<SettingsPage> {
                           value: profile?.phoneNumber ?? "-",
                           onTap: () => Navigator.pushNamed(context, '/settings-business'),
                         ),
+                        _SettingsTile(
+                          icon: Icons.percent_rounded,
+                          title: "Taux de commission",
+                          value: "Dépôt, retrait, Nafama, forfait, Sewa",
+                          onTap: () => Navigator.pushNamed(context, '/settings-commission-rates'),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),

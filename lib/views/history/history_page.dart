@@ -7,7 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
+import '../../controllers/settings_controller.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../models/commission_rates_model.dart';
 import '../../models/transaction_model.dart';
 import '../../services/export_share_service.dart';
 import '../../widgets/operation_phone_selector.dart';
@@ -27,6 +29,7 @@ class _HistoryPageState extends State<HistoryPage> {
   String _businessName = 'Mon Commerce';
   DateTime? _filterFrom;
   DateTime? _filterTo;
+  CommissionRates _commissionRates = CommissionRates.defaults;
 
   @override
   void initState() {
@@ -36,6 +39,10 @@ class _HistoryPageState extends State<HistoryPage> {
         OperationPhoneController.instance.syncFromProfile(p.operationPhones);
         setState(() => _businessName = p.businessName);
       }
+    });
+    SettingsController().getBusinessSettings().then((s) {
+      if (!mounted) return;
+      setState(() => _commissionRates = s.commissionRates);
     });
   }
 
@@ -429,7 +436,8 @@ class _HistoryPageState extends State<HistoryPage> {
             : phoneCtrl.text.trim(),
         merchantPhone: tx.merchantPhone,
         amount: amount,
-        commission: TransactionModel.calculateCommission(selectedType, amount),
+        commission:
+            TransactionModel.calculateCommission(selectedType, amount, rates: _commissionRates),
         soldeApres: tx.soldeApres,
         note: tx.note,
         createdAt: tx.createdAt,

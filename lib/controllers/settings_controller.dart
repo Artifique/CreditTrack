@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/app_logger.dart';
 import '../models/business_settings_model.dart';
+import '../models/commission_rates_model.dart';
 import '../models/operation_phone_wallet_model.dart';
 import '../models/profile_model.dart';
 
@@ -112,6 +113,17 @@ class SettingsController {
       'dark_mode': darkMode,
       'language': language,
       'auto_print_receipt': autoPrintReceipt,
+    });
+  }
+
+  Future<void> updateCommissionRates(CommissionRates rates) async {
+    final userId = _userId;
+    if (userId == null) throw Exception('Utilisateur non connecté.');
+
+    AppLogger.info('Mise a jour taux commissions user=$userId');
+    await _supabase.from('business_settings').upsert({
+      'user_id': userId,
+      'commission_rates': rates.toJson(),
     });
   }
 }

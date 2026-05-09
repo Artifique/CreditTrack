@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'commission_rates_model.dart';
+
 enum TransactionType {
   depot,
   retrait,
@@ -47,22 +49,27 @@ class TransactionModel {
     this.journalSeq,
   });
 
-  static double calculateCommission(TransactionType type, double amount) {
+  static double calculateCommission(
+    TransactionType type,
+    double amount, {
+    CommissionRates rates = CommissionRates.defaults,
+  }) {
     switch (type) {
       case TransactionType.depot:
-        return amount * 0.0014;
+        return amount * rates.depot;
       case TransactionType.retrait:
-        return amount * 0.0028;
+        return amount * rates.retrait;
       case TransactionType.nafama:
-        return amount * 0.0455;
+        return amount * rates.nafama;
       case TransactionType.transfertUv:
       case TransactionType.transfertC2c:
       case TransactionType.achat:
       case TransactionType.transfertProfitUv:
         return 0;
       case TransactionType.forfait:
+        return amount * rates.forfait;
       case TransactionType.sewa:
-        return amount * 0.10;
+        return amount * rates.sewa;
     }
   }
 

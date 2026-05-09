@@ -11,6 +11,7 @@ import 'views/history/history_page.dart';
 import 'views/settings/settings_page.dart';
 import 'views/settings/business_profile_page.dart';
 import 'views/settings/printer_settings_page.dart';
+import 'views/settings/commission_rates_page.dart';
 import 'views/reports/reports_page.dart';
 import 'models/new_transaction_route_args.dart';
 
@@ -56,6 +57,7 @@ class CreditTrakApp extends StatelessWidget {
             '/history': (context) => const HistoryPage(),
             '/settings': (context) => const SettingsPage(),
             '/settings-business': (context) => const BusinessProfilePage(),
+            '/settings-commission-rates': (context) => const CommissionRatesPage(),
             '/settings-printer': (context) => const PrinterSettingsPage(),
             '/reports': (context) => const ReportsPage(),
           },

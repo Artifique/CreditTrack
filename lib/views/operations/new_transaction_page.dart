@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
+import '../../controllers/settings_controller.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../models/commission_rates_model.dart';
 import '../../models/new_transaction_route_args.dart';
 import '../../models/transaction_model.dart';
 import '../../services/export_share_service.dart';
@@ -27,6 +29,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   String _selectedCategory = 'UV';
   TransactionType _selectedType = TransactionType.depot;
   double _estimatedCommission = 0;
+  CommissionRates _commissionRates = CommissionRates.defaults;
   bool _isSubmitting = false;
   TransactionModel? _createdTransaction;
   String _businessName = "Mon Commerce";
@@ -38,6 +41,11 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     super.initState();
     _amountController.addListener(_updateCommission);
     _loadOperationPhones();
+    SettingsController().getBusinessSettings().then((s) {
+      if (!mounted) return;
+      setState(() => _commissionRates = s.commissionRates);
+      _updateCommission();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final a = widget.routeArgs;
       if (a?.initialType == null || !mounted) return;
@@ -128,7 +136,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           ? _selectedMerchantPhone!.trim()
           : null,
       amount: amount,
-      commission: _estimatedCommission,
+      commission: 0,
       soldeApres: 0,
       note: null,
       createdAt: DateTime.now(),
@@ -153,7 +161,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   void _updateCommission() {
     final amount = double.tryParse(_amountController.text) ?? 0;
     setState(() {
-      _estimatedCommission = TransactionModel.calculateCommission(_selectedType, amount);
+      _estimatedCommission =
+          TransactionModel.calculateCommission(_selectedType, amount, rates: _commissionRates);
     });
   }
 

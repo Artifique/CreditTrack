@@ -143,6 +143,7 @@ create table if not exists public.business_settings (
   auto_print_receipt boolean not null default false,
   receipt_header text,
   receipt_footer text,
+  commission_rates jsonb not null default '{"depot":0.0014,"retrait":0.0028,"nafama":0.0455,"forfait":0.10,"sewa":0.10}'::jsonb,
   updated_at timestamptz not null default now()
 );
 
