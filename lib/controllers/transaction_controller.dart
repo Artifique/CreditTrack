@@ -76,12 +76,10 @@ class TransactionController {
 
     var pu = 0.0;
     var pc = 0.0;
-    if (rows is List) {
-      for (final r in rows) {
-        final m = r as Map<String, dynamic>;
-        pu += (m['profit_uv'] as num?)?.toDouble() ?? 0;
-        pc += (m['profit_credit'] as num?)?.toDouble() ?? 0;
-      }
+    for (final r in rows as List<dynamic>) {
+      final m = Map<String, dynamic>.from(r as Map);
+      pu += (m['profit_uv'] as num?)?.toDouble() ?? 0;
+      pc += (m['profit_credit'] as num?)?.toDouble() ?? 0;
     }
 
     return OperationPhoneWalletModel(
