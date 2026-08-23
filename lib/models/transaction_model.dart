@@ -12,6 +12,7 @@ enum TransactionType {
   achat,
   forfait,
   sewa,
+  transfertCredit,
 }
 
 enum TransactionCategory { UV, CREDIT }
@@ -23,7 +24,7 @@ class TransactionModel {
   final TransactionCategory category;
   final String clientName;
   final String clientPhone;
-  /// Numéro d'opération de l'agent (parmi ceux enregistrés sur le profil).
+  /// Numéro de transfert de l'agent (parmi ceux enregistrés sur le profil).
   final String? merchantPhone;
   final double amount;
   final double commission;
@@ -70,6 +71,8 @@ class TransactionModel {
         return amount * rates.forfait;
       case TransactionType.sewa:
         return amount * rates.sewa;
+      case TransactionType.transfertCredit:
+        return amount * rates.transfertCredit;
     }
   }
 
@@ -81,6 +84,8 @@ class TransactionModel {
         return 'transfert_c2c';
       case TransactionType.transfertProfitUv:
         return 'transfert_profit_uv';
+      case TransactionType.transfertCredit:
+        return 'transfert_credit';
       default:
         return type.name;
     }
@@ -94,6 +99,8 @@ class TransactionModel {
         return TransactionType.transfertC2c;
       case 'transfert_profit_uv':
         return TransactionType.transfertProfitUv;
+      case 'transfert_credit':
+        return TransactionType.transfertCredit;
       default:
         return TransactionType.values.byName(raw);
     }
@@ -119,6 +126,8 @@ class TransactionModel {
         return 'Forfait';
       case TransactionType.sewa:
         return 'Sewa';
+      case TransactionType.transfertCredit:
+        return 'Transfert de crédit';
     }
   }
 

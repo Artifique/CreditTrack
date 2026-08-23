@@ -3,7 +3,7 @@ class ProfileModel {
   final String businessName;
   final String? ownerName;
   final String? phoneNumber;
-  /// Jusqu'à 3 numéros utilisés pour les opérations (agent).
+  /// Jusqu'à 6 numéros de transfert utilisés pour les opérations (agent).
   final List<String> operationPhones;
   final double soldeUv;
   final double soldeCredit;
@@ -30,7 +30,7 @@ class ProfileModel {
     List<String> parseOperationPhones(dynamic v) {
       if (v == null) return [];
       if (v is List) {
-        return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).take(3).toList();
+        return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).take(6).toList();
       }
       return [];
     }

@@ -1,9 +1,29 @@
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
+
 import '../models/transaction_model.dart';
-import 'package:intl/intl.dart';
+
+/// Métadonnées des filtres Historique à imprimer en en-tête du PDF.
+class HistoryReportFilters {
+  const HistoryReportFilters({
+    required this.periodLabel,
+    required this.categoryLabel,
+    required this.typeLabel,
+    this.searchQuery = '',
+    this.merchantPhone,
+  });
+
+  final String periodLabel;
+  final String categoryLabel;
+  final String typeLabel;
+  final String searchQuery;
+  final String? merchantPhone;
+}
 
 class PdfService {
   // Générer un reçu de transaction unique
@@ -84,34 +104,106 @@ class PdfService {
     return _saveDocument(name: 'recu_${transaction.id}.pdf', pdf: pdf);
   }
 
-  // Générer un rapport complet de transactions (Liste)
-  Future<File> generateReport(List<TransactionModel> transactions, String title) async {
+  /// Construit le PDF historique en mémoire (web + mobile, sans path_provider).
+  Future<({Uint8List bytes, String filename})> buildHistoryPdf({
+    required List<TransactionModel> transactions,
+    required HistoryReportFilters filters,
+  }) async {
+    final fileStamp = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+    final pdf = _historyDocument(transactions, filters);
+    return (
+      bytes: await pdf.save(),
+      filename: 'historique_credittrak_$fileStamp.pdf',
+    );
+  }
+
+  /// Rapport historique enregistré sur disque (mobile / desktop uniquement).
+  Future<File> generateHistoryReport({
+    required List<TransactionModel> transactions,
+    required HistoryReportFilters filters,
+  }) async {
+    final built = await buildHistoryPdf(transactions: transactions, filters: filters);
+    if (kIsWeb) {
+      throw UnsupportedError('Enregistrement fichier indisponible sur le web. Utilise buildHistoryPdf.');
+    }
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/${built.filename}');
+    await file.writeAsBytes(built.bytes);
+    return file;
+  }
+
+  pw.Document _historyDocument(
+    List<TransactionModel> transactions,
+    HistoryReportFilters filters,
+  ) {
     final pdf = pw.Document();
+    final dateFmt = DateFormat('dd/MM/yyyy HH:mm');
+    final amountFmt = NumberFormat('#,##0');
+
+    final count = transactions.length;
+    final totalAmount = transactions.fold<double>(0, (s, t) => s + t.amount);
+    final totalCommission = transactions.fold<double>(0, (s, t) => s + t.commission);
+
+    String money(double v) => '${amountFmt.format(v.round())} F';
+
+    final filterLines = <String>[
+      'Période : ${filters.periodLabel}',
+      'Catégorie : ${filters.categoryLabel}',
+      'Type : ${filters.typeLabel}',
+    ];
+    if (filters.searchQuery.trim().isNotEmpty) {
+      filterLines.add('Recherche : ${filters.searchQuery.trim()}');
+    }
+    if (filters.merchantPhone != null && filters.merchantPhone!.trim().isNotEmpty) {
+      filterLines.add('N° transfert : ${filters.merchantPhone}');
+    }
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
         build: (pw.Context context) => [
-          pw.Header(level: 0, child: pw.Text(title, style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
-          pw.SizedBox(height: 20),
-          pw.Table.fromTextArray(
-            headers: ['Date', 'Type', 'Client', 'N° op.', 'Montant', 'Solde'],
-            data: transactions.map((t) => [
-              DateFormat('dd/MM/yy').format(t.createdAt),
-              t.type.name,
-              t.clientName,
-              t.merchantPhone ?? '—',
-              "${t.amount} F",
-              "${t.soldeApres} F"
-            ]).toList(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          pw.Text(
+            'Historique des transactions',
+            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 8),
+          ...filterLines.map((l) => pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 2),
+                child: pw.Text(l, style: const pw.TextStyle(fontSize: 10)),
+              )),
+          pw.SizedBox(height: 12),
+          pw.Text(
+            '$count opération${count > 1 ? 's' : ''}  ·  Montant ${money(totalAmount)}  ·  Commissions ${money(totalCommission)}',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 16),
+          pw.TableHelper.fromTextArray(
+            headers: ['Date et heure', 'Type', 'Client / tél.', 'N° transfert', 'Montant', 'Commission'],
+            data: transactions
+                .map((t) {
+                  final phone = t.clientPhone.trim();
+                  final client = phone.isEmpty ? t.clientName : '${t.clientName}  $phone';
+                  return [
+                    dateFmt.format(t.createdAt),
+                    TransactionModel.typeDisplayName(t.type),
+                    client,
+                    t.merchantPhone ?? '—',
+                    money(t.amount),
+                    money(t.commission),
+                  ];
+                })
+                .toList(),
+            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+            cellStyle: const pw.TextStyle(fontSize: 8),
             cellAlignment: pw.Alignment.centerLeft,
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
           ),
         ],
       ),
     );
-
-    return _saveDocument(name: 'rapport_credit_trak.pdf', pdf: pdf);
+    return pdf;
   }
 
   // Enregistrer le fichier dans le stockage local

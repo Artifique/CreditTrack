@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../../core/user_feedback.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/settings_controller.dart';
 import '../../controllers/theme_mode_controller.dart';
@@ -70,7 +71,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         _SettingsTile(
                           icon: Icons.percent_rounded,
                           title: "Taux de commission",
-                          value: "Dépôt, retrait, Nafama, forfait, Sewa",
+                          value: "Dépôt, retrait, Nafama, forfait, Sewa, Transfert de crédit",
                           onTap: () => Navigator.pushNamed(context, '/settings-commission-rates'),
                         ),
                       ],
@@ -120,6 +121,23 @@ class _SettingsPageState extends State<SettingsPage> {
                               }
                             }
                           },
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSettingsSection(
+                      context,
+                      "Données",
+                      [
+                        ListTile(
+                          onTap: () => _confirmClearAllData(context),
+                          leading: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent),
+                          title: const Text(
+                            "Effacer toutes les données",
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.redAccent),
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded, color: Colors.redAccent),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                         ),
                       ],
@@ -201,6 +219,72 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _confirmClearAllData(BuildContext context) async {
+    final confirmCtrl = TextEditingController();
+    final ok = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => StatefulBuilder(
+            builder: (dialogContext, setDialogState) {
+              final isMatch = confirmCtrl.text.trim() == 'SUPPRIMER';
+              return AlertDialog(
+                title: const Text("Effacer toutes les données"),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Cette action supprime définitivement toutes les transactions et l'historique, "
+                      "et remet tous les soldes et bénéfices à zéro. Le profil, les numéros de transfert "
+                      "enregistrés et les réglages ne sont pas affectés. Cette action est irréversible.",
+                    ),
+                    const SizedBox(height: 16),
+                    const Text("Tape SUPPRIMER pour confirmer :", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: confirmCtrl,
+                      onChanged: (_) => setDialogState(() {}),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: 'SUPPRIMER',
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text("Annuler"),
+                  ),
+                  ElevatedButton(
+                    onPressed: isMatch ? () => Navigator.pop(dialogContext, true) : null,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                    child: const Text("Effacer tout"),
+                  ),
+                ],
+              );
+            },
+          ),
+        ) ??
+        false;
+
+    confirmCtrl.dispose();
+    if (!ok) return;
+
+    try {
+      await _settingsController.clearAllData();
+      if (!mounted) return;
+      await UserFeedback.showSuccessModal(context, "Toutes les données ont été effacées.");
+      if (!mounted) return;
+      setState(() {
+        _profileFuture = _settingsController.getProfile();
+        _settingsFuture = _settingsController.getBusinessSettings();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      await UserFeedback.showErrorModal(context, e);
+    }
   }
 
   Widget _buildLogoutButton(BuildContext context) {

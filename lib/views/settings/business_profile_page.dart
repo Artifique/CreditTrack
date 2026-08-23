@@ -11,15 +11,18 @@ class BusinessProfilePage extends StatefulWidget {
 }
 
 class _BusinessProfilePageState extends State<BusinessProfilePage> {
+  static const _maxOperationPhones = 6;
+
   final _settingsController = SettingsController();
   final _businessController = TextEditingController();
   final _ownerController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _opPhone1Controller = TextEditingController();
-  final _opPhone2Controller = TextEditingController();
-  final _opPhone3Controller = TextEditingController();
-  final List<TextEditingController> _uvBalControllers = List.generate(3, (_) => TextEditingController());
-  final List<TextEditingController> _crBalControllers = List.generate(3, (_) => TextEditingController());
+  final List<TextEditingController> _opPhoneControllers =
+      List.generate(_maxOperationPhones, (_) => TextEditingController());
+  final List<TextEditingController> _uvBalControllers =
+      List.generate(_maxOperationPhones, (_) => TextEditingController());
+  final List<TextEditingController> _crBalControllers =
+      List.generate(_maxOperationPhones, (_) => TextEditingController());
 
   bool _isSaving = false;
   bool _loading = true;
@@ -44,14 +47,12 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
         _ownerController.text = profile.ownerName ?? '';
         _phoneController.text = profile.phoneNumber ?? '';
         final ops = profile.operationPhones;
-        _opPhone1Controller.text = ops.isNotEmpty ? ops[0] : '';
-        _opPhone2Controller.text = ops.length > 1 ? ops[1] : '';
-        _opPhone3Controller.text = ops.length > 2 ? ops[2] : '';
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < _maxOperationPhones; i++) {
+          _opPhoneControllers[i].text = i < ops.length ? ops[i] : '';
           _uvBalControllers[i].clear();
           _crBalControllers[i].clear();
         }
-        for (var i = 0; i < ops.length && i < 3; i++) {
+        for (var i = 0; i < ops.length && i < _maxOperationPhones; i++) {
           final w = await _settingsController.getOperationPhoneWallet(ops[i]);
           _uvBalControllers[i].text = (w?.soldeUv ?? 0).toStringAsFixed(0);
           _crBalControllers[i].text = (w?.soldeCredit ?? 0).toStringAsFixed(0);
@@ -69,9 +70,9 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
     _businessController.dispose();
     _ownerController.dispose();
     _phoneController.dispose();
-    _opPhone1Controller.dispose();
-    _opPhone2Controller.dispose();
-    _opPhone3Controller.dispose();
+    for (final c in _opPhoneControllers) {
+      c.dispose();
+    }
     for (final c in _uvBalControllers) {
       c.dispose();
     }
@@ -110,7 +111,7 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
                       _buildField('Téléphone', _phoneController),
                       const SizedBox(height: 24),
                       Text(
-                        'Numéros d’opération (max. 3)',
+                        'Numéros de transfert (max. $_maxOperationPhones)',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -124,12 +125,17 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
                         style: TextStyle(fontSize: 12, color: AppColors.textSecondary.withOpacity(0.95)),
                       ),
                       const SizedBox(height: 16),
-                      _buildOperationSlot(0, 'Numéro d’opération 1', _opPhone1Controller),
-                      const SizedBox(height: 20),
-                      _buildOperationSlot(1, 'Numéro d’opération 2 (optionnel)', _opPhone2Controller),
-                      const SizedBox(height: 20),
-                      _buildOperationSlot(2, 'Numéro d’opération 3 (optionnel)', _opPhone3Controller),
-                      const SizedBox(height: 48),
+                      for (var i = 0; i < _maxOperationPhones; i++) ...[
+                        _buildOperationSlot(
+                          i,
+                          i == 0
+                              ? 'Numéro de transfert ${i + 1}'
+                              : 'Numéro de transfert ${i + 1} (optionnel)',
+                          _opPhoneControllers[i],
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                      const SizedBox(height: 28),
                       _buildSaveButton(context),
                     ],
                   ),
@@ -217,12 +223,8 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
             : () async {
                 setState(() => _isSaving = true);
                 try {
-                  final slots = [
-                    _opPhone1Controller.text.trim(),
-                    _opPhone2Controller.text.trim(),
-                    _opPhone3Controller.text.trim(),
-                  ];
-                  final opPhones = slots.where((p) => p.isNotEmpty).take(3).toList();
+                  final slots = _opPhoneControllers.map((c) => c.text.trim()).toList();
+                  final opPhones = slots.where((p) => p.isNotEmpty).take(_maxOperationPhones).toList();
 
                   await _settingsController.updateProfile(
                     businessName: _businessController.text.trim(),
@@ -231,7 +233,7 @@ class _BusinessProfilePageState extends State<BusinessProfilePage> {
                     operationPhones: opPhones,
                   );
 
-                  for (var i = 0; i < 3; i++) {
+                  for (var i = 0; i < _maxOperationPhones; i++) {
                     final phone = slots[i];
                     if (phone.isEmpty) continue;
                     final uv = double.tryParse(_uvBalControllers[i].text.trim().replaceAll(' ', '')) ?? 0;

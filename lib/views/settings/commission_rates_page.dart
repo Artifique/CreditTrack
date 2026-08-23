@@ -21,6 +21,7 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
   final _nafamaCtrl = TextEditingController();
   final _forfaitCtrl = TextEditingController();
   final _sewaCtrl = TextEditingController();
+  final _transfertCreditCtrl = TextEditingController();
 
   bool _loading = true;
   bool _saving = false;
@@ -52,6 +53,7 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
     _nafamaCtrl.text = _multiplierToPercentString(r.nafama);
     _forfaitCtrl.text = _multiplierToPercentString(r.forfait);
     _sewaCtrl.text = _multiplierToPercentString(r.sewa);
+    _transfertCreditCtrl.text = _multiplierToPercentString(r.transfertCredit);
   }
 
   /// Affiche le pourcentage équivalent (multiplicateur × 100).
@@ -74,15 +76,17 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
     final n = _parsePercentInput(_nafamaCtrl.text);
     final f = _parsePercentInput(_forfaitCtrl.text);
     final s = _parsePercentInput(_sewaCtrl.text);
-    if (d == null || r == null || n == null || f == null || s == null) return null;
-    if (d < 0 || r < 0 || n < 0 || f < 0 || s < 0) return null;
-    if (d > 100 || r > 100 || n > 100 || f > 100 || s > 100) return null;
+    final tc = _parsePercentInput(_transfertCreditCtrl.text);
+    if (d == null || r == null || n == null || f == null || s == null || tc == null) return null;
+    if (d < 0 || r < 0 || n < 0 || f < 0 || s < 0 || tc < 0) return null;
+    if (d > 100 || r > 100 || n > 100 || f > 100 || s > 100 || tc > 100) return null;
     return CommissionRates.fromPercentages(
       depotPct: d,
       retraitPct: r,
       nafamaPct: n,
       forfaitPct: f,
       sewaPct: s,
+      transfertCreditPct: tc,
     );
   }
 
@@ -124,6 +128,7 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
     _nafamaCtrl.dispose();
     _forfaitCtrl.dispose();
     _sewaCtrl.dispose();
+    _transfertCreditCtrl.dispose();
     super.dispose();
   }
 
@@ -172,6 +177,11 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
                     _pctField(
                       label: 'Sewa (crédit)',
                       controller: _sewaCtrl,
+                    ),
+                    const SizedBox(height: 16),
+                    _pctField(
+                      label: 'Transfert de crédit (crédit)',
+                      controller: _transfertCreditCtrl,
                     ),
                     const SizedBox(height: 28),
                     FilledButton(

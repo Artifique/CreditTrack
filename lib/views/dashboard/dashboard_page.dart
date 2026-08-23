@@ -104,7 +104,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               if (sel == null && _wallet.profitUv > 0) ...[
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Sélectionne un numéro d’opération pour utiliser « Transférer profit UV ».',
+                                  'Sélectionne un numéro de transfert pour utiliser « Transférer profit UV ».',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Theme.of(context).colorScheme.onSurfaceVariant,

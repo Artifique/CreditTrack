@@ -26,8 +26,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   final _clientPhoneController = TextEditingController();
   final _amountController = TextEditingController();
   final _transactionController = TransactionController();
-  String _selectedCategory = 'UV';
-  TransactionType _selectedType = TransactionType.depot;
+  String? _selectedCategory;
+  TransactionType? _selectedType;
   double _estimatedCommission = 0;
   CommissionRates _commissionRates = CommissionRates.defaults;
   bool _isSubmitting = false;
@@ -35,12 +35,30 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   String _businessName = "Mon Commerce";
   List<String> _operationPhones = [];
   String? _selectedMerchantPhone;
+  List<String> _recentPhones = [];
+
+  static const _uvTypes = [
+    TransactionType.depot,
+    TransactionType.retrait,
+    TransactionType.nafama,
+    TransactionType.transfertUv,
+    TransactionType.transfertC2c,
+    TransactionType.transfertProfitUv,
+  ];
+  static const _creditTypes = [
+    TransactionType.achat,
+    TransactionType.forfait,
+    TransactionType.sewa,
+    TransactionType.transfertCredit,
+  ];
+  static const _quickAmounts = [1000, 2000, 3000, 4000, 5000, 10000];
 
   @override
   void initState() {
     super.initState();
     _amountController.addListener(_updateCommission);
     _loadOperationPhones();
+    _loadRecentPhones();
     SettingsController().getBusinessSettings().then((s) {
       if (!mounted) return;
       setState(() => _commissionRates = s.commissionRates);
@@ -62,6 +80,16 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   bool get _isProfitTransfer => _selectedType == TransactionType.transfertProfitUv;
+
+  bool get _canShowTypes => _selectedCategory != null;
+
+  bool get _canShowAgent => _selectedCategory != null && _selectedType != null;
+
+  bool get _canShowForm =>
+      _canShowAgent && (_operationPhones.isEmpty || (_selectedMerchantPhone?.trim().isNotEmpty ?? false));
+
+  List<TransactionType> get _typesForSelectedCategory =>
+      _selectedCategory == 'CREDIT' ? _creditTypes : _uvTypes;
 
   bool _isValidPhoneDigits(String raw) {
     final digits = raw.replaceAll(RegExp(r'\D'), '');
@@ -85,8 +113,15 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     });
   }
 
+  Future<void> _loadRecentPhones() async {
+    final phones = await _transactionController.getRecentClientPhones();
+    if (!mounted) return;
+    setState(() => _recentPhones = phones);
+  }
+
   @override
   void dispose() {
+    _amountController.removeListener(_updateCommission);
     _clientPhoneController.dispose();
     _amountController.dispose();
     super.dispose();
@@ -96,6 +131,12 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       UserFeedback.showErrorModal(context, Exception("Session expirée. Reconnecte-toi."));
+      return;
+    }
+    final category = _selectedCategory;
+    final type = _selectedType;
+    if (category == null || type == null) {
+      UserFeedback.showErrorModal(context, Exception("Choisis d’abord le type d’opération."));
       return;
     }
 
@@ -117,7 +158,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         (_selectedMerchantPhone == null || _selectedMerchantPhone!.trim().isEmpty)) {
       UserFeedback.showErrorModal(
         context,
-        Exception("Choisis le numéro d'opération utilisé pour cette transaction."),
+        Exception("Choisis le numéro de transfert utilisé pour cette transaction."),
       );
       return;
     }
@@ -128,8 +169,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
 
     final transaction = TransactionModel(
       userId: userId,
-      type: _selectedType,
-      category: _selectedCategory == 'UV' ? TransactionCategory.UV : TransactionCategory.CREDIT,
+      type: type,
+      category: category == 'UV' ? TransactionCategory.UV : TransactionCategory.CREDIT,
       clientName: _isProfitTransfer ? 'Transfert interne' : 'Client',
       clientPhone: clientPhone,
       merchantPhone: _selectedMerchantPhone?.trim().isNotEmpty == true
@@ -159,11 +200,37 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   void _updateCommission() {
-    final amount = double.tryParse(_amountController.text) ?? 0;
+    final amount = double.tryParse(_amountController.text.trim().replaceAll(' ', '')) ?? 0;
+    final type = _selectedType;
     setState(() {
-      _estimatedCommission =
-          TransactionModel.calculateCommission(_selectedType, amount, rates: _commissionRates);
+      _estimatedCommission = type == null
+          ? 0
+          : TransactionModel.calculateCommission(type, amount, rates: _commissionRates);
     });
+  }
+
+  void _selectCategory(String category) {
+    setState(() {
+      _selectedCategory = category;
+      if (_selectedType != null && !_typesForSelectedCategory.contains(_selectedType)) {
+        _selectedType = null;
+      }
+    });
+    _updateCommission();
+  }
+
+  void _selectType(TransactionType type) {
+    setState(() => _selectedType = type);
+    _updateCommission();
+  }
+
+  void _selectQuickAmount(int amount) {
+    _amountController.text = amount.toString();
+    _updateCommission();
+  }
+
+  int? get _enteredAmount {
+    return int.tryParse(_amountController.text.trim().replaceAll(' ', ''));
   }
 
   @override
@@ -182,46 +249,49 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _sectionTitle("Type d’opération"),
+              const SizedBox(height: 12),
               _buildCategorySelector(),
-              const SizedBox(height: 32),
-              _buildTypeSelector(),
-              const SizedBox(height: 32),
-              if (_operationPhones.isNotEmpty) _buildMerchantPhoneSelector(),
-              if (_operationPhones.isNotEmpty) const SizedBox(height: 20),
-              if (_operationPhones.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Text(
-                    "Enregistre au moins un numéro d'opération et ses soldes dans Profil commerce : "
+              if (_canShowTypes) ...[
+                const SizedBox(height: 24),
+                _buildTypeSelector(),
+              ],
+              if (_canShowAgent) ...[
+                const SizedBox(height: 28),
+                _sectionTitle("Compte agent"),
+                const SizedBox(height: 12),
+                if (_operationPhones.isNotEmpty)
+                  _buildMerchantPhoneSelector()
+                else
+                  Text(
+                    "Enregistre au moins un numéro de transfert et ses soldes dans Profil commerce : "
                     "il est obligatoire pour chaque transaction.",
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary.withOpacity(0.95)),
                   ),
-                ),
-              if (!_isProfitTransfer)
+              ],
+              if (_canShowForm) ...[
+                const SizedBox(height: 28),
+                _sectionTitle("Informations de l’opération"),
+                const SizedBox(height: 12),
+                if (!_isProfitTransfer) ...[
+                  _buildClientPhoneField(),
+                  const SizedBox(height: 20),
+                ],
                 _buildInputField(
-                  label: 'Numéro de téléphone client',
-                  hint: '77 000 00 00',
-                  icon: Icons.phone_android_rounded,
-                  keyboardType: TextInputType.phone,
-                  controller: _clientPhoneController,
+                  label: "Montant (CFA)",
+                  hint: "0",
+                  icon: Icons.payments_outlined,
+                  keyboardType: TextInputType.number,
+                  isAmount: true,
+                  controller: _amountController,
                 ),
-              if (!_isProfitTransfer) const SizedBox(height: 20),
-              const SizedBox(height: 20),
-              _buildInputField(
-                label: "Montant (CFA)",
-                hint: "0",
-                icon: Icons.payments_outlined,
-                keyboardType: TextInputType.number,
-                isAmount: true,
-                controller: _amountController,
-              ),
-              const SizedBox(height: 24),
-              if (_isProfitTransfer)
-                _buildProfitTransferHint()
-              else
-                _buildCommissionPreview(),
-              const SizedBox(height: 48),
-              _buildSubmitButton(),
+                const SizedBox(height: 16),
+                _buildQuickAmounts(),
+                const SizedBox(height: 24),
+                if (_isProfitTransfer) _buildProfitTransferHint() else _buildCommissionPreview(),
+                const SizedBox(height: 36),
+                _buildSubmitButton(),
+              ],
             ],
           ),
         ),
@@ -229,38 +299,145 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     );
   }
 
-  Widget _buildMerchantPhoneSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _sectionTitle(String text) {
+    return Text(text, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16));
+  }
+
+  Widget _buildCategorySelector() {
+    return Row(
       children: [
-        const Text("Numéro d'opération utilisé", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Theme.of(context).dividerColor),
+        Expanded(
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: _SquareTile(
+              label: "Mobile Money (UV)",
+              icon: Icons.account_balance_wallet_rounded,
+              isSelected: _selectedCategory == 'UV',
+              onTap: () => _selectCategory('UV'),
+            ),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: _selectedMerchantPhone,
-              hint: const Text("Choisir un numéro"),
-              items: _operationPhones
-                  .map(
-                    (p) => DropdownMenuItem<String>(
-                      value: p,
-                      child: Text(p, overflow: TextOverflow.ellipsis),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _selectedMerchantPhone = v),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: _SquareTile(
+              label: "Crédit",
+              icon: Icons.sim_card_rounded,
+              isSelected: _selectedCategory == 'CREDIT',
+              onTap: () => _selectCategory('CREDIT'),
             ),
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildTypeSelector() {
+    return _squareGrid(
+      itemCount: _typesForSelectedCategory.length,
+      crossAxisCount: 3,
+      itemBuilder: (index) {
+        final type = _typesForSelectedCategory[index];
+        return _SquareTile(
+          label: TransactionModel.typeDisplayName(type),
+          icon: _iconForType(type),
+          isSelected: _selectedType == type,
+          onTap: () => _selectType(type),
+        );
+      },
+    );
+  }
+
+  Widget _buildMerchantPhoneSelector() {
+    return _squareGrid(
+      itemCount: _operationPhones.length,
+      crossAxisCount: _operationPhones.length == 1 ? 2 : 3,
+      itemBuilder: (index) {
+        final phone = _operationPhones[index];
+        return _SquareTile(
+          label: phone,
+          icon: Icons.sim_card_outlined,
+          isSelected: _selectedMerchantPhone == phone,
+          onTap: () => setState(() => _selectedMerchantPhone = phone),
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickAmounts() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Montants rapides", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 10),
+        _squareGrid(
+          itemCount: _quickAmounts.length,
+          crossAxisCount: 3,
+          itemBuilder: (index) {
+            final amount = _quickAmounts[index];
+            return _SquareTile(
+              label: "${_formatQuick(amount)} FCFA",
+              icon: Icons.payments_outlined,
+              isSelected: _enteredAmount == amount,
+              onTap: () => _selectQuickAmount(amount),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  String _formatQuick(int amount) {
+    if (amount >= 1000) {
+      final thousands = amount ~/ 1000;
+      return '$thousands 000';
+    }
+    return '$amount';
+  }
+
+  Widget _squareGrid({
+    required int itemCount,
+    required int crossAxisCount,
+    required Widget Function(int index) itemBuilder,
+  }) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: itemCount,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 1,
+      ),
+      itemBuilder: (context, index) => itemBuilder(index),
+    );
+  }
+
+  IconData _iconForType(TransactionType type) {
+    switch (type) {
+      case TransactionType.depot:
+        return Icons.arrow_downward_rounded;
+      case TransactionType.retrait:
+        return Icons.arrow_upward_rounded;
+      case TransactionType.nafama:
+        return Icons.savings_outlined;
+      case TransactionType.transfertUv:
+        return Icons.swap_horiz_rounded;
+      case TransactionType.transfertC2c:
+        return Icons.people_alt_outlined;
+      case TransactionType.transfertProfitUv:
+        return Icons.trending_up_rounded;
+      case TransactionType.achat:
+        return Icons.add_card_rounded;
+      case TransactionType.forfait:
+        return Icons.wifi_rounded;
+      case TransactionType.sewa:
+        return Icons.phonelink_ring_rounded;
+      case TransactionType.transfertCredit:
+        return Icons.mobile_screen_share_rounded;
+    }
   }
 
   Widget _buildProfitTransferHint() {
@@ -280,7 +457,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           ),
           SizedBox(height: 8),
           Text(
-            'Le montant est ajouté à ton solde UV sur le numéro d’opération choisi et déduit de ton bénéfice UV. '
+            'Le montant est ajouté à ton solde UV sur le numéro de transfert choisi et déduit de ton bénéfice UV. '
             'Aucune commission sur cette opération.',
             style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
@@ -316,99 +493,72 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     );
   }
 
-  Widget _buildCategorySelector() {
-    return Row(
+  Widget _buildClientPhoneField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _CategoryChip(
-          label: "Mobile Money (UV)",
-          isSelected: _selectedCategory == 'UV',
-          onTap: () => setState(() {
-            _selectedCategory = 'UV';
-            const uvTypes = [
-              TransactionType.depot,
-              TransactionType.retrait,
-              TransactionType.nafama,
-              TransactionType.transfertUv,
-              TransactionType.transfertC2c,
-              TransactionType.transfertProfitUv,
-            ];
-            if (!uvTypes.contains(_selectedType)) {
-              _selectedType = TransactionType.depot;
+        const Text('Numéro client', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 8),
+        Autocomplete<String>(
+          optionsBuilder: (textEditingValue) {
+            final q = textEditingValue.text.trim();
+            if (q.isEmpty) return const Iterable<String>.empty();
+            final qNorm = q.replaceAll(' ', '');
+            return _recentPhones.where((p) => p.replaceAll(' ', '').contains(qNorm)).take(5);
+          },
+          onSelected: (v) => _clientPhoneController.text = v,
+          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+            if (controller.text != _clientPhoneController.text) {
+              controller.text = _clientPhoneController.text;
             }
-            _updateCommission();
-          }),
-        ),
-        const SizedBox(width: 12),
-        _CategoryChip(
-          label: "Crédit",
-          isSelected: _selectedCategory == 'CREDIT',
-          onTap: () => setState(() {
-            _selectedCategory = 'CREDIT';
-            const crTypes = [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
-            if (!crTypes.contains(_selectedType)) {
-              _selectedType = TransactionType.achat;
-            }
-            _updateCommission();
-          }),
+            return TextFormField(
+              controller: controller,
+              focusNode: focusNode,
+              keyboardType: TextInputType.phone,
+              onChanged: (v) => _clientPhoneController.text = v,
+              decoration: InputDecoration(
+                hintText: '77 000 00 00',
+                prefixIcon: Icon(Icons.phone_android_rounded, color: AppColors.primary),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.all(20),
+              ),
+            );
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                borderRadius: BorderRadius.circular(16),
+                color: Theme.of(context).colorScheme.surface,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 220),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    itemBuilder: (context, index) {
+                      final option = options.elementAt(index);
+                      return ListTile(
+                        dense: true,
+                        leading: Icon(Icons.history_rounded, color: AppColors.textSecondary),
+                        title: Text(option),
+                        onTap: () => onSelected(option),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
-  }
-
-  Widget _buildTypeSelector() {
-    final types = _selectedCategory == 'UV'
-        ? [
-            TransactionType.depot,
-            TransactionType.retrait,
-            TransactionType.nafama,
-            TransactionType.transfertUv,
-            TransactionType.transfertC2c,
-            TransactionType.transfertProfitUv,
-          ]
-        : [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
-
-    return Wrap(
-      spacing: 12,
-      children: types.map((type) => ChoiceChip(
-        label: Text(_typeLabel(type)),
-        selected: _selectedType == type,
-        onSelected: (val) => setState(() {
-          _selectedType = type;
-          _updateCommission();
-        }),
-        selectedColor: AppColors.primary.withOpacity(0.2),
-        labelStyle: TextStyle(
-          color: _selectedType == type ? AppColors.primary : AppColors.textSecondary,
-          fontWeight: FontWeight.bold,
-        ),
-        showCheckmark: false,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      )).toList(),
-    );
-  }
-
-  String _typeLabel(TransactionType type) {
-    switch (type) {
-      case TransactionType.depot:
-        return "DEPOT";
-      case TransactionType.retrait:
-        return "RETRAIT";
-      case TransactionType.nafama:
-        return "NAFAMA";
-      case TransactionType.transfertUv:
-        return "TRANSFERT UV";
-      case TransactionType.transfertC2c:
-        return "TRANSFERT C2C";
-      case TransactionType.achat:
-        return "ACHAT";
-      case TransactionType.forfait:
-        return "FORFAIT";
-      case TransactionType.sewa:
-        return "SEWA";
-      case TransactionType.transfertProfitUv:
-        return "PROFIT UV";
-    }
   }
 
   Widget _buildInputField({
@@ -560,33 +710,66 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 }
 
-class _CategoryChip extends StatelessWidget {
+class _SquareTile extends StatelessWidget {
   final String label;
+  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _CategoryChip({required this.label, required this.isSelected, required this.onTap});
+  const _SquareTile({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: isSelected ? AppColors.primary : scheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: isSelected ? null : Border.all(color: Colors.grey.shade300),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
-                fontWeight: FontWeight.bold,
-              ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : scheme.outlineVariant.withOpacity(0.6),
+              width: isSelected ? 2 : 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isSelected ? 0.08 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 28,
+                color: isSelected ? Colors.white : AppColors.primary,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                  color: isSelected ? Colors.white : scheme.onSurface,
+                ),
+              ),
+            ],
           ),
         ),
       ),

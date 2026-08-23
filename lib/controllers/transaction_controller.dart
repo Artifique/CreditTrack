@@ -41,7 +41,7 @@ class TransactionController {
       return 'Solde insuffisant : cette opération rendrait le solde négatif.';
     }
     if (s.contains('MERCHANT_PHONE_REQUIRED')) {
-      return 'Le numéro d’opération est obligatoire pour enregistrer une transaction.';
+      return 'Le numéro de transfert est obligatoire pour enregistrer une transaction.';
     }
     if (s.contains('Montant supérieur au bénéfice UV')) {
       return 'Montant supérieur au bénéfice UV disponible sur ce numéro.';
@@ -173,6 +173,31 @@ class TransactionController {
     final response = await q.order('created_at', ascending: false).limit(limit);
 
     return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
+  }
+
+  /// Numéros client déjà utilisés (les plus récents en premier, dédupliqués),
+  /// pour suggestion automatique à la saisie d'une nouvelle transaction.
+  Future<List<String>> getRecentClientPhones({int limit = 300}) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    final rows = await _supabase
+        .from('transactions')
+        .select('client_phone, type')
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(limit);
+
+    final seen = <String>{};
+    final result = <String>[];
+    for (final r in rows as List<dynamic>) {
+      final m = Map<String, dynamic>.from(r as Map);
+      if (m['type'] == 'transfert_profit_uv') continue;
+      final phone = (m['client_phone'] as String?)?.trim() ?? '';
+      if (phone.isEmpty || !seen.add(phone)) continue;
+      result.add(phone);
+    }
+    return result;
   }
 
   // Calculer les statistiques simples pour le dashboard

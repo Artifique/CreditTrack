@@ -5,6 +5,7 @@ class CommissionRates {
   final double nafama;
   final double forfait;
   final double sewa;
+  final double transfertCredit;
 
   const CommissionRates({
     required this.depot,
@@ -12,6 +13,7 @@ class CommissionRates {
     required this.nafama,
     required this.forfait,
     required this.sewa,
+    required this.transfertCredit,
   });
 
   static const defaults = CommissionRates(
@@ -20,6 +22,7 @@ class CommissionRates {
     nafama: 0.0455,
     forfait: 0.10,
     sewa: 0.10,
+    transfertCredit: 0.10,
   );
 
   Map<String, dynamic> toJson() => {
@@ -28,6 +31,7 @@ class CommissionRates {
         'nafama': nafama,
         'forfait': forfait,
         'sewa': sewa,
+        'transfert_credit': transfertCredit,
       };
 
   factory CommissionRates.fromJson(dynamic raw) {
@@ -47,6 +51,7 @@ class CommissionRates {
       nafama: read('nafama', CommissionRates.defaults.nafama),
       forfait: read('forfait', CommissionRates.defaults.forfait),
       sewa: read('sewa', CommissionRates.defaults.sewa),
+      transfertCredit: read('transfert_credit', CommissionRates.defaults.transfertCredit),
     );
   }
 
@@ -56,6 +61,7 @@ class CommissionRates {
   double get percentNafama => nafama * 100;
   double get percentForfait => forfait * 100;
   double get percentSewa => sewa * 100;
+  double get percentTransfertCredit => transfertCredit * 100;
 
   /// À partir d’un pourcentage saisi (ex. 0.14 ou 10).
   static CommissionRates fromPercentages({
@@ -64,6 +70,7 @@ class CommissionRates {
     required double nafamaPct,
     required double forfaitPct,
     required double sewaPct,
+    required double transfertCreditPct,
   }) {
     return CommissionRates(
       depot: depotPct / 100,
@@ -71,6 +78,7 @@ class CommissionRates {
       nafama: nafamaPct / 100,
       forfait: forfaitPct / 100,
       sewa: sewaPct / 100,
+      transfertCredit: transfertCreditPct / 100,
     );
   }
 }

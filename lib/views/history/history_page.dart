@@ -1,9 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../core/theme.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
@@ -12,6 +8,7 @@ import '../../controllers/transaction_controller.dart';
 import '../../models/commission_rates_model.dart';
 import '../../models/transaction_model.dart';
 import '../../services/export_share_service.dart';
+import '../../services/pdf_service.dart';
 import '../../widgets/operation_phone_selector.dart';
 import '../operations/transaction_detail_page.dart';
 
@@ -26,10 +23,28 @@ class _HistoryPageState extends State<HistoryPage> {
   final _transactionController = TransactionController();
   final _searchController = TextEditingController();
   String _categoryFilter = "Tout";
+  TransactionType? _typeFilter;
   String _businessName = 'Mon Commerce';
   DateTime? _filterFrom;
   DateTime? _filterTo;
+  bool _exportingPdf = false;
+  List<TransactionModel> _lastFiltered = const [];
   CommissionRates _commissionRates = CommissionRates.defaults;
+
+  static const _uvTypes = [
+    TransactionType.depot,
+    TransactionType.retrait,
+    TransactionType.nafama,
+    TransactionType.transfertUv,
+    TransactionType.transfertC2c,
+    TransactionType.transfertProfitUv,
+  ];
+  static const _creditTypes = [
+    TransactionType.achat,
+    TransactionType.forfait,
+    TransactionType.sewa,
+    TransactionType.transfertCredit,
+  ];
 
   @override
   void initState() {
@@ -60,14 +75,9 @@ class _HistoryPageState extends State<HistoryPage> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.date_range_rounded),
-            tooltip: 'Filtrer par date',
-            onPressed: _pickDateRange,
-          ),
-          IconButton(
-            icon: const Icon(Icons.table_rows_rounded),
-            tooltip: 'Exporter CSV',
-            onPressed: _exportCsv,
+            icon: const Icon(Icons.picture_as_pdf_rounded),
+            tooltip: 'Exporter en PDF',
+            onPressed: _exportingPdf ? null : _exportPdfFromStream,
           ),
         ],
       ),
@@ -79,32 +89,14 @@ class _HistoryPageState extends State<HistoryPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const OperationPhoneSelector(),
-                if (_filterFrom != null || _filterTo != null) ...[
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Text(
-                        _dateFilterLabel(),
-                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() {
-                          _filterFrom = null;
-                          _filterTo = null;
-                        }),
-                        child: const Text('Réinitialiser dates'),
-                      ),
-                    ],
-                  ),
-                ],
+                const SizedBox(height: 12),
+                _buildPeriodRow(),
               ],
             ),
           ),
           _buildSearchBar(),
-          _buildFilterChips(),
+          _buildCategoryChips(),
+          _buildTypeChips(),
           Expanded(
             child: ListenableBuilder(
               listenable: OperationPhoneController.instance,
@@ -115,7 +107,30 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                   builder: (context, snapshot) {
                     final list = _applyFilters(snapshot.data ?? []);
-                    return _buildTransactionList(list);
+                    _lastFiltered = list;
+                    return Column(
+                      children: [
+                        _buildSummaryBar(list),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: _exportingPdf ? null : () => _exportPdf(list),
+                              icon: _exportingPdf
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                              label: Text(_exportingPdf ? 'Export…' : 'Exporter en PDF'),
+                            ),
+                          ),
+                        ),
+                        Expanded(child: _buildTransactionList(list)),
+                      ],
+                    );
                   },
                 );
               },
@@ -128,12 +143,12 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: TextField(
         controller: _searchController,
         onChanged: (_) => setState(() {}),
         decoration: InputDecoration(
-          hintText: "Rechercher un client ou un numéro...",
+          hintText: "Rechercher nom, téléphone ou N° d’opération...",
           prefixIcon: const Icon(Icons.search_rounded),
           filled: true,
           fillColor: Theme.of(context).colorScheme.surface,
@@ -146,18 +161,118 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildPeriodRow() {
+    final df = DateFormat('dd/MM/yyyy');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _DateReadOnlyField(
+                label: 'Du',
+                value: _filterFrom != null ? df.format(_filterFrom!) : '—',
+                onTap: _pickDateRange,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _DateReadOnlyField(
+                label: 'Au',
+                value: _filterTo != null ? df.format(_filterTo!) : '—',
+                onTap: _pickDateRange,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            FilledButton.tonalIcon(
+              onPressed: _pickDateRange,
+              icon: const Icon(Icons.date_range_rounded, size: 18),
+              label: const Text('Choisir une plage'),
+            ),
+            if (_filterFrom != null || _filterTo != null)
+              TextButton(
+                onPressed: () => setState(() {
+                  _filterFrom = null;
+                  _filterTo = null;
+                }),
+                child: const Text('Réinitialiser'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryChips() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _FilterChip(label: "Tout", isSelected: _categoryFilter == "Tout", onTap: () => setState(() => _categoryFilter = "Tout")),
-          _FilterChip(label: "UV", isSelected: _categoryFilter == "UV", onTap: () => setState(() => _categoryFilter = "UV")),
-          _FilterChip(label: "CREDIT", isSelected: _categoryFilter == "CREDIT", onTap: () => setState(() => _categoryFilter = "CREDIT")),
+          _FilterChip(label: "Tout", isSelected: _categoryFilter == "Tout", onTap: () => _setCategory("Tout")),
+          _FilterChip(label: "UV", isSelected: _categoryFilter == "UV", onTap: () => _setCategory("UV")),
+          _FilterChip(label: "Crédit", isSelected: _categoryFilter == "CREDIT", onTap: () => _setCategory("CREDIT")),
         ],
       ),
     );
+  }
+
+  Widget _buildTypeChips() {
+    final types = _typesForCategory(_categoryFilter);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      child: Row(
+        children: [
+          _FilterChip(
+            label: "Tous les types",
+            isSelected: _typeFilter == null,
+            onTap: () => setState(() => _typeFilter = null),
+          ),
+          ...types.map(
+            (t) => _FilterChip(
+              label: TransactionModel.typeDisplayName(t),
+              isSelected: _typeFilter == t,
+              onTap: () => setState(() => _typeFilter = t),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<TransactionType> _typesForCategory(String category) {
+    if (category == 'UV') return _uvTypes;
+    if (category == 'CREDIT') return _creditTypes;
+    return [..._uvTypes, ..._creditTypes];
+  }
+
+  void _setCategory(String category) {
+    setState(() {
+      _categoryFilter = category;
+      if (_typeFilter != null && !_typesForCategory(category).contains(_typeFilter)) {
+        _typeFilter = null;
+      }
+    });
+  }
+
+  String _categoryLabel() {
+    if (_categoryFilter == 'CREDIT') return 'Crédit';
+    return _categoryFilter;
+  }
+
+  String _periodLabel() {
+    final df = DateFormat('dd/MM/yyyy');
+    if (_filterFrom != null && _filterTo != null) {
+      return 'Du ${df.format(_filterFrom!)} au ${df.format(_filterTo!)}';
+    }
+    if (_filterFrom != null) return 'À partir du ${df.format(_filterFrom!)}';
+    if (_filterTo != null) return 'Jusqu’au ${df.format(_filterTo!)}';
+    return 'Toutes les dates';
   }
 
   bool _inDateRange(DateTime d) {
@@ -174,27 +289,21 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   bool _matchesFilters(TransactionModel tx) {
-    final q = _searchController.text.trim().toLowerCase();
+    final q = _searchController.text.trim();
+    final qLower = q.toLowerCase();
+    final qDigits = q.replaceAll(' ', '');
     final bySearch = q.isEmpty ||
-        tx.clientName.toLowerCase().contains(q) ||
-        tx.clientPhone.contains(_searchController.text.trim()) ||
-        (tx.merchantPhone ?? '').contains(_searchController.text.trim());
+        tx.clientName.toLowerCase().contains(qLower) ||
+        tx.clientPhone.replaceAll(' ', '').contains(qDigits) ||
+        (tx.merchantPhone ?? '').replaceAll(' ', '').contains(qDigits) ||
+        (tx.journalSeq?.toString() ?? '').contains(q);
     final byCategory = _categoryFilter == 'Tout' || tx.category.name == _categoryFilter;
-    return bySearch && byCategory && _inDateRange(tx.createdAt);
+    final byType = _typeFilter == null || tx.type == _typeFilter;
+    return bySearch && byCategory && byType && _inDateRange(tx.createdAt);
   }
 
   List<TransactionModel> _applyFilters(List<TransactionModel> transactions) {
     return transactions.where(_matchesFilters).toList();
-  }
-
-  String _dateFilterLabel() {
-    final df = DateFormat('dd/MM/yyyy');
-    if (_filterFrom != null && _filterTo != null) {
-      return 'Du ${df.format(_filterFrom!)} au ${df.format(_filterTo!)}';
-    }
-    if (_filterFrom != null) return 'À partir du ${df.format(_filterFrom!)}';
-    if (_filterTo != null) return 'Jusqu’au ${df.format(_filterTo!)}';
-    return '';
   }
 
   Future<void> _pickDateRange() async {
@@ -214,42 +323,69 @@ class _HistoryPageState extends State<HistoryPage> {
     });
   }
 
-  Future<void> _exportCsv() async {
-    try {
-      final phone = OperationPhoneController.instance.selectedForFilter;
-      final txs = await _transactionController.getTransactions(merchantPhone: phone, limit: 5000);
-      final filtered = txs.where(_matchesFilters).toList();
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/credittrak_historique.csv');
-      String esc(Object? v) {
-        final s = v?.toString() ?? '';
-        if (s.contains(';') || s.contains('"') || s.contains('\n')) {
-          return '"${s.replaceAll('"', '""')}"';
-        }
-        return s;
-      }
-      final lines = <String>[
-        'journal_seq;date_utc;type;category;montant;commission;client_tel;numero_operation;id',
-      ];
-      for (final t in filtered) {
-        lines.add([
-          t.journalSeq?.toString() ?? '',
-          t.createdAt.toIso8601String(),
-          TransactionModel.typeToApi(t.type),
-          t.category.name,
-          t.amount.toStringAsFixed(2),
-          t.commission.toStringAsFixed(2),
-          esc(t.clientPhone),
-          esc(t.merchantPhone),
-          esc(t.id),
-        ].join(';'));
-      }
-      await file.writeAsString(lines.join('\n'), encoding: utf8);
+  Widget _buildSummaryBar(List<TransactionModel> txs) {
+    final count = txs.length;
+    final totalAmount = txs.fold<double>(0, (s, t) => s + t.amount);
+    final totalCommission = txs.fold<double>(0, (s, t) => s + t.commission);
+    final money = NumberFormat('#,##0');
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          _SummaryStat(label: 'Opérations', value: '$count'),
+          _SummaryStat(label: 'Montant', value: '${money.format(totalAmount.round())} F'),
+          _SummaryStat(label: 'Commissions', value: '${money.format(totalCommission.round())} F'),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportPdfFromStream() => _exportPdf(_lastFiltered);
+
+  Future<void> _exportPdf(List<TransactionModel> filtered) async {
+    if (filtered.isEmpty) {
       if (!mounted) return;
-      await ExportShareService.shareCsv(file, subject: 'CreditTrak — export CSV');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Aucune transaction à exporter.')),
+      );
+      return;
+    }
+    setState(() => _exportingPdf = true);
+    try {
+      final built = await PdfService().buildHistoryPdf(
+        transactions: filtered,
+        filters: HistoryReportFilters(
+          periodLabel: _periodLabel(),
+          categoryLabel: _categoryLabel(),
+          typeLabel: _typeFilter == null ? 'Tous les types' : TransactionModel.typeDisplayName(_typeFilter!),
+          searchQuery: _searchController.text,
+          merchantPhone: OperationPhoneController.instance.selectedForFilter,
+        ),
+      );
+      if (!mounted) return;
+      await ExportShareService.sharePdfBytes(
+        built.bytes,
+        filename: built.filename,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choisis « Enregistrer » ou une appli pour partager le PDF.'),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       await UserFeedback.showErrorModal(context, e);
+    } finally {
+      if (mounted) setState(() => _exportingPdf = false);
     }
   }
 
@@ -321,7 +457,12 @@ class _HistoryPageState extends State<HistoryPage> {
             TransactionType.transfertC2c,
             TransactionType.transfertProfitUv,
           ]
-        : [TransactionType.achat, TransactionType.forfait, TransactionType.sewa];
+        : [
+            TransactionType.achat,
+            TransactionType.forfait,
+            TransactionType.sewa,
+            TransactionType.transfertCredit,
+          ];
 
     final saved = await showDialog<bool>(
       context: context,
@@ -381,7 +522,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Numéro d’opération : ${tx.merchantPhone ?? "—"}',
+                        'Numéro de transfert : ${tx.merchantPhone ?? "—"}',
                         style: const TextStyle(fontSize: 13),
                       ),
                     )
@@ -449,6 +590,64 @@ class _HistoryPageState extends State<HistoryPage> {
       if (!mounted) return;
       await UserFeedback.showErrorModal(context, e);
     }
+  }
+}
+
+class _DateReadOnlyField extends StatelessWidget {
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const _DateReadOnlyField({
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: scheme.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+        child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+}
+
+class _SummaryStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SummaryStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -547,15 +746,28 @@ class _TransactionHistoryItem extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(transaction.clientName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            TransactionModel.typeDisplayName(transaction.type),
+                            style: TextStyle(color: AppColors.primary.withOpacity(0.95), fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          if (transaction.clientPhone.trim().isNotEmpty)
+                            Text(
+                              transaction.clientPhone,
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            ),
+                          if (transaction.journalSeq != null)
+                            Text(
+                              'N°${transaction.journalSeq}',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
                           if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
                             Text(
-                              "Op. ${transaction.merchantPhone}",
-                              style: TextStyle(color: AppColors.primary.withOpacity(0.9), fontSize: 11),
+                              'Transfert ${transaction.merchantPhone}',
+                              style: TextStyle(color: AppColors.primary.withOpacity(0.85), fontSize: 11),
                             ),
                           Text(
-                            "${transaction.createdAt.day}/${transaction.createdAt.month}/${transaction.createdAt.year}"
-                            "${transaction.journalSeq != null ? ' · N°${transaction.journalSeq}' : ''}",
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                            DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt),
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                           ),
                           Text(
                             'Détail & reçu',
@@ -575,7 +787,14 @@ class _TransactionHistoryItem extends StatelessWidget {
                             fontSize: 16,
                           ),
                         ),
-                        Text(transaction.category.name, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                        Text(
+                          'Commission ${transaction.commission.toStringAsFixed(0)} F',
+                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                        ),
+                        Text(
+                          transaction.category == TransactionCategory.CREDIT ? 'Crédit' : 'UV',
+                          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                        ),
                         Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
                       ],
                     ),

@@ -66,7 +66,7 @@ class SettingsController {
     final phones = (operationPhones ?? [])
         .map((p) => p.trim())
         .where((p) => p.isNotEmpty)
-        .take(3)
+        .take(6)
         .toList();
 
     AppLogger.info('Mise a jour profil user=$userId');
@@ -114,6 +114,18 @@ class SettingsController {
       'language': language,
       'auto_print_receipt': autoPrintReceipt,
     });
+  }
+
+  /// Efface définitivement toutes les transactions, logs, exports et portefeuilles
+  /// de l'utilisateur connecté, et remet ses soldes/bénéfices à zéro. Le profil
+  /// (nom du commerce, numéros de transfert enregistrés) et les réglages (taux de
+  /// commission, thème) ne sont pas affectés.
+  Future<void> clearAllData() async {
+    final userId = _userId;
+    if (userId == null) throw Exception('Utilisateur non connecté.');
+
+    AppLogger.info('Effacement complet des données user=$userId');
+    await _supabase.rpc('clear_all_data');
   }
 
   Future<void> updateCommissionRates(CommissionRates rates) async {

@@ -1,4 +1,4 @@
-/// Soldes et bénéfices cumulés pour un numéro d'opération (ligne Supabase `operation_phone_wallets`).
+/// Soldes et bénéfices cumulés pour un numéro de transfert (ligne Supabase `operation_phone_wallets`).
 class OperationPhoneWalletModel {
   final String phone;
   final double soldeUv;

@@ -10,5 +10,5 @@ alter table public.transactions
 create index if not exists idx_transactions_user_merchant_phone
   on public.transactions (user_id, merchant_phone);
 
-comment on column public.profiles.operation_phones is 'Jusqu''à 3 numéros agent pour filtrer historique / stats.';
-comment on column public.transactions.merchant_phone is 'Numéro d''opération choisi pour cette transaction.';
+comment on column public.profiles.operation_phones is 'Jusqu''à 6 numéros de transfert (agent) pour filtrer historique / stats.';
+comment on column public.transactions.merchant_phone is 'Numéro de transfert choisi pour cette transaction.';

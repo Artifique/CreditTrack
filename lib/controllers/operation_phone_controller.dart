@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Gère la sélection du numéro d'opération (filtrage historique / stats) et la persistance locale.
+/// Gère la sélection du numéro de transfert (filtrage historique / stats) et la persistance locale.
 class OperationPhoneController extends ChangeNotifier {
   OperationPhoneController._();
   static final instance = OperationPhoneController._();
@@ -28,12 +28,12 @@ class OperationPhoneController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// À appeler après chargement du profil : liste des numéros enregistrés (max 3).
+  /// À appeler après chargement du profil : liste des numéros de transfert enregistrés (max 6).
   Future<void> syncFromProfile(List<String> phones) async {
     _phones = phones
         .map((p) => p.trim())
         .where((p) => p.isNotEmpty)
-        .take(3)
+        .take(6)
         .toList();
 
     final prefs = await SharedPreferences.getInstance();

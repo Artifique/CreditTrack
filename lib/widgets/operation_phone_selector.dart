@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../controllers/operation_phone_controller.dart';
 import '../core/theme.dart';
 
-/// Sélecteur de numéro d'opération (filtre historique / statistiques).
+/// Sélecteur de numéro de transfert (filtre historique / statistiques).
 class OperationPhoneSelector extends StatelessWidget {
   const OperationPhoneSelector({super.key});
 
@@ -24,7 +24,7 @@ class OperationPhoneSelector extends StatelessWidget {
               border: Border.all(color: Colors.amber.shade200),
             ),
             child: const Text(
-              "Ajoute jusqu'à 3 numéros d'opération dans Profil commerce pour filtrer l'historique et les stats.",
+              "Ajoute jusqu'à 6 numéros de transfert dans Profil commerce pour filtrer l'historique et les stats.",
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           );

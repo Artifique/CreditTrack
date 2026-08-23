@@ -86,7 +86,7 @@ class TransactionDetailPage extends StatelessWidget {
                 _row('Client', transaction.clientName, variant, onSurface),
                 _row('Téléphone', transaction.clientPhone, variant, onSurface),
                 if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
-                  _row('N° opération', transaction.merchantPhone!, variant, onSurface),
+                  _row('N° transfert', transaction.merchantPhone!, variant, onSurface),
                 _row(
                   'Montant',
                   '${NumberFormat('#,##0', 'fr_FR').format(transaction.amount)} CFA',
