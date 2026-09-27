@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/tokens.dart';
 import '../../core/user_feedback.dart';
-import '../../controllers/client_favorites_controller.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/settings_controller.dart';
 import '../../controllers/sim_card_controller.dart';
@@ -103,7 +102,6 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   @override
   void initState() {
     super.initState();
-    ClientFavoritesController.instance.init();
     _amountController.addListener(_calculateCommission);
 
     // Load wallet & business settings
@@ -1840,7 +1838,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
 
       // Save client in recents if it was a real client
       if (!_isProfitTransfer) {
-        await ClientFavoritesController.instance.addRecent(phone, name);
+        // Nothing to do locally anymore, history is fetched from db
       }
 
       // Refresh SIM balances
