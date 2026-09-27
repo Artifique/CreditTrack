@@ -66,7 +66,6 @@ class SettingsController {
     final phones = (operationPhones ?? [])
         .map((p) => p.trim())
         .where((p) => p.isNotEmpty)
-        .take(6)
         .toList();
 
     AppLogger.info('Mise a jour profil user=$userId');

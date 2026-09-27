@@ -1,0 +1,186 @@
+/**
+ * CreditTrak Design System — Tokens
+ * Production Ready - Light & Dark Mode
+ */
+
+:root {
+  /* --------------------------------------------------
+   * 1. COLOR PALETTE
+   * -------------------------------------------------- */
+  
+  /* Brand / Primary (Orange Solaire - Orange Money Pro) */
+  --color-primary-50: #FFF7ED;
+  --color-primary-100: #FFEDD5;
+  --color-primary-200: #FED7AA;
+  --color-primary-300: #FDBA74;
+  --color-primary-400: #FB923C;
+  --color-primary-500: #FF7900; /* Signature Orange Solaire */
+  --color-primary-600: #EA580C; /* Orange Vif Intense */
+  --color-primary-700: #C2410C;
+  --color-primary-800: #9A3412;
+  --color-primary-900: #7C2D12;
+  --color-primary-gradient: linear-gradient(135deg, #FF7900 0%, #EA580C 100%);
+  --color-primary-glow: rgba(255, 121, 0, 0.28);
+
+  /* Secondary / Accent (Émeraude Nafama / Gain) */
+  --color-secondary-50: #ECFDF5;
+  --color-secondary-100: #D1FAE5;
+  --color-secondary-200: #A7F3D0;
+  --color-secondary-300: #6EE7B7;
+  --color-secondary-400: #34D399;
+  --color-secondary-500: #10B981; /* Secondary Brand */
+  --color-secondary-600: #059669;
+  --color-secondary-700: #047857;
+  --color-secondary-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+
+  /* Semantics */
+  --color-success-bg: #ECFDF5;
+  --color-success-text: #065F46;
+  --color-success-border: #A7F3D0;
+  --color-success: #10B981;
+
+  --color-warning-bg: #FFFBEB;
+  --color-warning-text: #92400E;
+  --color-warning-border: #FDE68A;
+  --color-warning: #F59E0B;
+
+  --color-error-bg: #FEF2F2;
+  --color-error-text: #991B1B;
+  --color-error-border: #FECACA;
+  --color-error: #EF4444;
+
+  --color-info-bg: #F0F9FF;
+  --color-info-text: #0369A1;
+  --color-info-border: #BAE6FD;
+  --color-info: #0284C7;
+
+  /* Neutrals (Light Mode Default - Obsidian & Crisp Whites) */
+  --color-bg-base: #F9FAFB;       /* Gray 50 */
+  --color-bg-subtle: #F3F4F6;     /* Gray 100 */
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F9FAFB;
+  --color-border: #E5E7EB;        /* Gray 200 */
+  --color-border-hover: #D1D5DB;  /* Gray 300 */
+
+  --color-text-primary: #111827;   /* Obsidian Gray 900 - High Contrast */
+  --color-text-secondary: #475569; /* Slate 600 - Muted */
+  --color-text-tertiary: #94A3B8;  /* Slate 400 - Subtle */
+  --color-text-inverse: #FFFFFF;
+
+  /* --------------------------------------------------
+   * 2. TYPOGRAPHY SCALE
+   * -------------------------------------------------- */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-md: 1rem;       /* 16px - Base */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.35;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* --------------------------------------------------
+   * 3. SPACING GRID (Multiples of 4)
+   * -------------------------------------------------- */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Touch Target Minimum (44x44 standard) */
+  --touch-target-min: 44px;
+
+  /* --------------------------------------------------
+   * 4. BORDER RADIUS
+   * -------------------------------------------------- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-pill: 9999px;
+
+  /* --------------------------------------------------
+   * 5. SHADOWS & ELEVATION
+   * -------------------------------------------------- */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-glow: 0 10px 25px -5px rgba(99, 102, 241, 0.35);
+
+  /* --------------------------------------------------
+   * 6. TRANSITIONS & TIMING
+   * -------------------------------------------------- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+
+  --transition-fast: all var(--duration-fast) var(--ease-standard);
+  --transition-normal: all var(--duration-normal) var(--ease-standard);
+}
+
+/* --------------------------------------------------
+ * 7. DARK MODE PALETTE
+ * (Rich Deep Slate & Midnight, never pure #000000)
+ * -------------------------------------------------- */
+[data-theme='dark'],
+.dark {
+  --color-bg-base: #0B0F19;       /* Deep Midnight */
+  --color-bg-subtle: #111827;     /* Slate Dark 900 */
+  --color-surface: #1E293B;       /* Slate 800 */
+  --color-surface-hover: #27354A;
+  --color-border: #334155;        /* Slate 700 */
+  --color-border-hover: #475569;  /* Slate 600 */
+
+  --color-text-primary: #F8FAFC;   /* Slate 50 - High Contrast */
+  --color-text-secondary: #94A3B8; /* Slate 400 - Readable */
+  --color-text-tertiary: #64748B;  /* Slate 500 */
+  --color-text-inverse: #0F172A;
+
+  --color-success-bg: rgba(16, 185, 129, 0.15);
+  --color-success-text: #34D399;
+  --color-success-border: rgba(16, 185, 129, 0.3);
+
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-warning-text: #FBBF24;
+  --color-warning-border: rgba(245, 158, 11, 0.3);
+
+  --color-error-bg: rgba(239, 68, 68, 0.15);
+  --color-error-text: #F87171;
+  --color-error-border: rgba(239, 68, 68, 0.3);
+
+  --color-info-bg: rgba(59, 130, 246, 0.15);
+  --color-info-text: #60A5FA;
+  --color-info-border: rgba(59, 130, 246, 0.3);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 10px 25px -5px rgba(99, 102, 241, 0.45);
+}

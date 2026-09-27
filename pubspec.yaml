@@ -21,6 +21,7 @@ dependencies:
   share_plus: ^10.1.4
   permission_handler: ^11.3.1
   printing: ^5.13.4
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -40,3 +41,5 @@ flutter:
   uses-material-design: true
   assets:
     - CreditTrak.png
+    - assets/images/onboarding/
+    - assets/images/

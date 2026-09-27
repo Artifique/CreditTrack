@@ -30,7 +30,7 @@ class ProfileModel {
     List<String> parseOperationPhones(dynamic v) {
       if (v == null) return [];
       if (v is List) {
-        return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).take(6).toList();
+        return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
       }
       return [];
     }

@@ -119,7 +119,7 @@ class TransactionModel {
       case TransactionType.transfertC2c:
         return 'Transfert C2C';
       case TransactionType.transfertProfitUv:
-        return 'Transfert profit UV';
+        return 'Transfert Profit UV';
       case TransactionType.achat:
         return 'Achat crédit';
       case TransactionType.forfait:

@@ -177,7 +177,7 @@ class TransactionController {
 
   /// Numéros client déjà utilisés (les plus récents en premier, dédupliqués),
   /// pour suggestion automatique à la saisie d'une nouvelle transaction.
-  Future<List<String>> getRecentClientPhones({int limit = 300}) async {
+  Future<List<String>> getRecentClientPhones() async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return [];
 
@@ -185,8 +185,7 @@ class TransactionController {
         .from('transactions')
         .select('client_phone, type')
         .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .limit(limit);
+        .order('created_at', ascending: false);
 
     final seen = <String>{};
     final result = <String>[];

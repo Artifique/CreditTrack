@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/theme.dart';
+import '../../core/tokens.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/auth_controller.dart';
+import '../../widgets/ui/ui.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -18,32 +19,40 @@ class _SignUpPageState extends State<SignUpPage> {
   final _authController = AuthController();
   bool _isLoading = false;
 
+  String? _businessError;
+  String? _emailError;
+  String? _passwordError;
+
   Future<void> _handleSignUp() async {
-    if (_businessController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty) {
-      UserFeedback.showErrorModal(
-        context,
-        Exception("Nom commerce, email et mot de passe sont requis."),
-      );
+    final business = _businessController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    setState(() {
+      _businessError = business.isEmpty ? "Nom du commerce requis" : null;
+      _emailError = email.isEmpty ? "Email requis" : null;
+      _passwordError = password.isEmpty ? "Mot de passe requis" : null;
+    });
+
+    if (_businessError != null || _emailError != null || _passwordError != null) {
       return;
     }
 
     setState(() => _isLoading = true);
     try {
       await _authController.signUp(
-        _emailController.text.trim(),
-        _passwordController.text,
-        _businessController.text.trim(),
+        email,
+        password,
+        business,
         ownerName: _nameController.text.trim(),
       );
 
       if (!mounted) return;
-      await UserFeedback.showSuccessModal(context, "Compte créé avec succès.");
+      UserFeedback.showSuccessToast(context, "Compte créé avec succès !");
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       if (!mounted) return;
-      await UserFeedback.showErrorModal(context, e);
+      UserFeedback.showErrorToast(context, e, title: "Erreur d'inscription");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -60,103 +69,150 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Créer un compte", style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.primary)),
-            const SizedBox(height: 8),
-            const Text("Commencez à gérer votre business intelligemment.", style: TextStyle(color: AppColors.textSecondary)),
-            const SizedBox(height: 40),
-            _buildInputField(context, label: "Nom du Commerce", hint: "ex: Toure Multi-Services", icon: Icons.storefront_rounded, controller: _businessController),
-            const SizedBox(height: 20),
-            _buildInputField(context, label: "Votre Nom Complet", hint: "ex: Aly Toure", icon: Icons.person_outline_rounded, controller: _nameController),
-            const SizedBox(height: 20),
-            _buildInputField(context, label: "Email Professionnel", hint: "nom@exemple.com", icon: Icons.alternate_email_rounded, controller: _emailController),
-            const SizedBox(height: 20),
-            _buildInputField(context, label: "Mot de passe", hint: "••••••••", icon: Icons.lock_outline_rounded, isPassword: true, controller: _passwordController),
-            const SizedBox(height: 40),
-            _buildSignUpButton(),
-            const SizedBox(height: 24),
-            _buildLoginText(),
-          ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+          ),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-    );
-  }
-
-  Widget _buildInputField(
-    BuildContext context, {
-    required String label,
-    required String hint,
-    required IconData icon,
-    required TextEditingController controller,
-    bool isPassword = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          obscureText: isPassword,
-          decoration: InputDecoration(
-            hintText: hint,
-            prefixIcon: Icon(icon, color: AppColors.primary),
-            filled: true,
-            fillColor: Theme.of(context).colorScheme.surface,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.black, width: 1.5),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: ResponsiveContainer(
+              maxWidth: 480,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: FadeInUp(
+                duration: const Duration(milliseconds: 350),
+                child: AppCard(
+                  variant: AppCardVariant.elevated,
+                  padding: const EdgeInsets.all(AppTokens.space24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Créer un compte",
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Gérez vos opérations et visualisez vos profits en temps réel.",
+                        style: TextStyle(
+                          color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      const SizedBox(height: AppTokens.space24),
+                      AppInput(
+                        controller: _businessController,
+                        label: "Nom du Commerce",
+                        hintText: "ex: Toure Multi-Services",
+                        isRequired: true,
+                        prefixIcon: Icons.storefront_rounded,
+                        textInputAction: TextInputAction.next,
+                        errorText: _businessError,
+                        onChanged: (_) {
+                          if (_businessError != null) setState(() => _businessError = null);
+                        },
+                      ),
+                      const SizedBox(height: AppTokens.space16),
+                      AppInput(
+                        controller: _nameController,
+                        label: "Votre Nom Complet",
+                        hintText: "ex: Aly Toure",
+                        prefixIcon: Icons.person_outline_rounded,
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: AppTokens.space16),
+                      AppInput(
+                        controller: _emailController,
+                        label: "Email Professionnel",
+                        hintText: "nom@exemple.com",
+                        isRequired: true,
+                        prefixIcon: Icons.alternate_email_rounded,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        errorText: _emailError,
+                        onChanged: (_) {
+                          if (_emailError != null) setState(() => _emailError = null);
+                        },
+                      ),
+                      const SizedBox(height: AppTokens.space16),
+                      AppInput(
+                        controller: _passwordController,
+                        label: "Mot de passe",
+                        hintText: "••••••••",
+                        isRequired: true,
+                        isPassword: true,
+                        prefixIcon: Icons.lock_outline_rounded,
+                        textInputAction: TextInputAction.done,
+                        errorText: _passwordError,
+                        onSubmitted: (_) => _handleSignUp(),
+                        onChanged: (_) {
+                          if (_passwordError != null) setState(() => _passwordError = null);
+                        },
+                      ),
+                      const SizedBox(height: AppTokens.space28),
+                      AppButton(
+                        label: "Commencer maintenant",
+                        icon: Icons.rocket_launch_rounded,
+                        isFullWidth: true,
+                        size: AppButtonSize.lg,
+                        isLoading: _isLoading,
+                        onPressed: _handleSignUp,
+                      ),
+                      const SizedBox(height: AppTokens.space20),
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Déjà un compte ? ",
+                              style: TextStyle(
+                                color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                child: Text(
+                                  "Se connecter",
+                                  style: TextStyle(
+                                    color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.black, width: 1.5),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Colors.black, width: 2),
-            ),
-            contentPadding: const EdgeInsets.all(20),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildSignUpButton() {
-    return Container(
-      width: double.infinity,
-      height: 60,
-      decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
       ),
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleSignUp,
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : const Text("Créer mon compte", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  Widget _buildLoginText() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Text("Déjà un compte ?"),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Se connecter", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-        ),
-      ],
     );
   }
 }

@@ -72,7 +72,7 @@ class ReceiptPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: surface,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +84,7 @@ class ReceiptPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Divider(color: variant.withOpacity(0.3)),
+                    Divider(color: variant.withValues(alpha: 0.3)),
                     if (transaction.journalSeq != null)
                       _line(context, 'N° journal', '#${transaction.journalSeq}'),
                     _line(context, 'Type', TransactionModel.typeDisplayName(transaction.type)),

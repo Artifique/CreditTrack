@@ -1,114 +1,250 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'tokens.dart';
 
+/// Legacy AppColors aliased to AppTokens for backwards compatibility
 class AppColors {
-  static const Color primary = Color(0xFF6366F1); // Indigo Moderne
-  static const Color secondary = Color(0xFF10B981); // Menthe Aqua
-  static const Color background = Color(0xFFF8FAFC); // Gris Perle
-  static const Color surface = Colors.white;
-  static const Color textPrimary = Color(0xFF1E293B);
-  static const Color textSecondary = Color(0xFF64748B);
-  
-  // Dégradés
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static const Color primary = AppTokens.primary500;
+  static const Color primaryDark = AppTokens.primary600;
+  static const Color secondary = AppTokens.secondary500;
+  static const Color background = AppTokens.lightBg;
+  static const Color surface = AppTokens.lightSurface;
+  static const Color textPrimary = AppTokens.lightTextPrimary;
+  static const Color textSecondary = AppTokens.lightTextSecondary;
 
-  static const LinearGradient cardGradientUV = LinearGradient(
-    colors: [Color(0xFF0F172A), Color(0xFF334155)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // Semantics
+  static const Color success = AppTokens.success;
+  static const Color warning = AppTokens.warning;
+  static const Color error = AppTokens.error;
+  static const Color info = AppTokens.info;
 
-  static const LinearGradient cardGradientCredit = LinearGradient(
-    colors: [Color(0xFF065F46), Color(0xFF10B981)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  // Gradients
+  static const LinearGradient primaryGradient = AppTokens.primaryGradient;
+  static const LinearGradient secondaryGradient = AppTokens.secondaryGradient;
+  static const LinearGradient cardGradientUV = AppTokens.cardGradientUV;
+  static const LinearGradient cardGradientCredit = AppTokens.cardGradientCredit;
 }
 
 class AppTheme {
-  static const Color _darkBg = Color(0xFF0F172A);
-  static const Color _darkSurface = Color(0xFF1E293B);
+  static ThemeData get lightTheme {
+    final textTheme = AppTokens.textTheme(AppTokens.lightTextPrimary, AppTokens.lightTextSecondary);
 
-  static ThemeData lightTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: AppColors.background,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+    return ThemeData(
+      useMaterial3: true,
       brightness: Brightness.light,
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.background,
-      foregroundColor: AppColors.textPrimary,
-      elevation: 0,
-    ),
-    textTheme: const TextTheme(
-      headlineMedium: TextStyle(
-        color: AppColors.textPrimary,
-        fontWeight: FontWeight.bold,
-        fontSize: 24,
+      scaffoldBackgroundColor: AppTokens.lightBg,
+      colorScheme: const ColorScheme(
+        brightness: Brightness.light,
+        primary: AppTokens.primary500,
+        onPrimary: Colors.white,
+        primaryContainer: AppTokens.primary50,
+        onPrimaryContainer: AppTokens.primary800,
+        secondary: AppTokens.secondary500,
+        onSecondary: Colors.white,
+        secondaryContainer: AppTokens.secondary50,
+        onSecondaryContainer: AppTokens.secondary700,
+        error: AppTokens.error,
+        onError: Colors.white,
+        errorContainer: AppTokens.errorBg,
+        onErrorContainer: AppTokens.errorText,
+        surface: AppTokens.lightSurface,
+        onSurface: AppTokens.lightTextPrimary,
+        surfaceContainerHighest: AppTokens.lightBgSubtle,
+        onSurfaceVariant: AppTokens.lightTextSecondary,
+        outline: AppTokens.lightBorder,
+        outlineVariant: AppTokens.lightBorderHover,
       ),
-      bodyMedium: TextStyle(
-        color: AppColors.textSecondary,
-        fontSize: 14,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppTokens.lightBg,
+        foregroundColor: AppTokens.lightTextPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: AppTokens.lightTextPrimary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      color: AppColors.surface,
-    ),
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      },
-    ),
-  );
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusXl),
+          side: const BorderSide(color: AppTokens.lightBorder, width: 1),
+        ),
+        color: AppTokens.lightSurface,
+        margin: EdgeInsets.zero,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppTokens.lightSurface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: const TextStyle(
+          color: AppTokens.lightTextTertiary,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.lightBorder, width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.lightBorder, width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.primary500, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.error, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.error, width: 2),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTokens.primary500,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          minimumSize: const Size(AppTokens.minTouchTarget, AppTokens.minTouchTarget),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppTokens.lightSurface,
+        selectedItemColor: AppTokens.primary500,
+        unselectedItemColor: AppTokens.lightTextTertiary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
 
-  static ThemeData darkTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: _darkBg,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+  static ThemeData get darkTheme {
+    final textTheme = AppTokens.textTheme(AppTokens.darkTextPrimary, AppTokens.darkTextSecondary);
+
+    return ThemeData(
+      useMaterial3: true,
       brightness: Brightness.dark,
-      primary: AppColors.primary,
-      secondary: AppColors.secondary,
-      surface: _darkSurface,
-    ),
-    appBarTheme: const AppBarTheme(
-      backgroundColor: _darkBg,
-      foregroundColor: Colors.white,
-      elevation: 0,
-    ),
-    textTheme: const TextTheme(
-      headlineMedium: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 24,
+      scaffoldBackgroundColor: AppTokens.darkBg,
+      colorScheme: const ColorScheme(
+        brightness: Brightness.dark,
+        primary: AppTokens.primary400,
+        onPrimary: Color(0xFF0F172A),
+        primaryContainer: AppTokens.primary900,
+        onPrimaryContainer: AppTokens.primary100,
+        secondary: AppTokens.secondary400,
+        onSecondary: Color(0xFF064E3B),
+        secondaryContainer: Color(0xFF064E3B),
+        onSecondaryContainer: AppTokens.secondary100,
+        error: AppTokens.error,
+        onError: Colors.white,
+        errorContainer: AppTokens.darkErrorBg,
+        onErrorContainer: AppTokens.darkErrorText,
+        surface: AppTokens.darkSurface,
+        onSurface: AppTokens.darkTextPrimary,
+        surfaceContainerHighest: AppTokens.darkBgSubtle,
+        onSurfaceVariant: AppTokens.darkTextSecondary,
+        outline: AppTokens.darkBorder,
+        outlineVariant: AppTokens.darkBorderHover,
       ),
-      bodyMedium: TextStyle(
-        color: Color(0xFF94A3B8),
-        fontSize: 14,
+      textTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppTokens.darkBg,
+        foregroundColor: AppTokens.darkTextPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: AppTokens.darkTextPrimary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      color: _darkSurface,
-    ),
-    pageTransitionsTheme: const PageTransitionsTheme(
-      builders: {
-        TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-      },
-    ),
-  );
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusXl),
+          side: const BorderSide(color: AppTokens.darkBorder, width: 1),
+        ),
+        color: AppTokens.darkSurface,
+        margin: EdgeInsets.zero,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppTokens.darkBgSubtle,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: const TextStyle(
+          color: AppTokens.darkTextTertiary,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.darkBorder, width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.darkBorder, width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.primary400, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.error, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          borderSide: const BorderSide(color: AppTokens.error, width: 2),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTokens.primary500,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          minimumSize: const Size(AppTokens.minTouchTarget, AppTokens.minTouchTarget),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          ),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: AppTokens.darkSurface,
+        selectedItemColor: AppTokens.primary400,
+        unselectedItemColor: AppTokens.darkTextTertiary,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+    );
+  }
 }

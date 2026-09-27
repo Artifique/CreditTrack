@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
 import 'controllers/operation_phone_controller.dart';
 import 'controllers/theme_mode_controller.dart';
+import 'views/auth/splash_page.dart';
 import 'views/auth/login_page.dart';
 import 'views/auth/signup_page.dart';
 import 'views/dashboard/dashboard_page.dart';
@@ -12,6 +13,7 @@ import 'views/settings/settings_page.dart';
 import 'views/settings/business_profile_page.dart';
 import 'views/settings/printer_settings_page.dart';
 import 'views/settings/commission_rates_page.dart';
+import 'views/settings/sim_cards_settings_page.dart';
 import 'views/reports/reports_page.dart';
 import 'models/new_transaction_route_args.dart';
 
@@ -44,7 +46,7 @@ class CreditTrakApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: ThemeModeController.instance.themeMode,
-          home: const AuthWrapper(),
+          home: const SplashPage(),
           routes: {
             '/login': (context) => const LoginPage(),
             '/signup': (context) => const SignUpPage(),
@@ -57,6 +59,7 @@ class CreditTrakApp extends StatelessWidget {
             '/history': (context) => const HistoryPage(),
             '/settings': (context) => const SettingsPage(),
             '/settings-business': (context) => const BusinessProfilePage(),
+            '/settings-sims': (context) => const SimCardsSettingsPage(),
             '/settings-commission-rates': (context) => const CommissionRatesPage(),
             '/settings-printer': (context) => const PrinterSettingsPage(),
             '/reports': (context) => const ReportsPage(),
@@ -67,22 +70,3 @@ class CreditTrakApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-
-    return StreamBuilder<AuthState>(
-      stream: supabase.auth.onAuthStateChange,
-      builder: (context, snapshot) {
-        final session = supabase.auth.currentSession;
-        if (session != null) {
-          return const DashboardPage();
-        }
-        return const LoginPage();
-      },
-    );
-  }
-}

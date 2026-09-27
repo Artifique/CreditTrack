@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme.dart';
+import '../../../core/tokens.dart';
 import '../../../models/transaction_model.dart';
 
 /// Graphique circulaire : part du volume UV vs Crédit sur les 7 derniers jours.
@@ -36,7 +37,7 @@ class ActivityChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +92,7 @@ class ActivityChart extends StatelessWidget {
                                 ),
                               if (volCredit > 0)
                                 PieChartSectionData(
-                                  color: AppColors.primary,
+                                  color: AppTokens.primary500,
                                   value: volCredit,
                                   title: '${(100 * volCredit / totalVol).toStringAsFixed(0)}%',
                                   radius: 52,
@@ -138,7 +139,7 @@ class ActivityChart extends StatelessWidget {
                         ),
                         const SizedBox(height: 14),
                         _LegendDot(
-                          color: AppColors.primary,
+                          color: AppTokens.primary500,
                           label: 'Crédit',
                           value: '${NumberFormat('#,##0', 'fr_FR').format(volCredit)} F',
                           textColor: onSurface,

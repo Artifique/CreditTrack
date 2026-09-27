@@ -69,7 +69,7 @@ class TransactionDetailPage extends StatelessWidget {
             decoration: BoxDecoration(
               color: surface,
               borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12)],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12)],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

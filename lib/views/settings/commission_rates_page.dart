@@ -148,7 +148,7 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
+                    const Text(
                       'Saisis les pourcentages appliqués au montant de chaque opération. '
                       'Ex. dépôt historique : 0,14 signifie 0,14 %.',
                       style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
