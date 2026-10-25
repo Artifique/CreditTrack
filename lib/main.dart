@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
 import 'controllers/operation_phone_controller.dart';
@@ -28,6 +29,7 @@ void main() async {
 
   await OperationPhoneController.instance.init();
   await ThemeModeController.instance.init();
+  await initializeDateFormatting('fr', null);
 
   runApp(const CreditTrakApp());
 }

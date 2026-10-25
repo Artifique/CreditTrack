@@ -73,6 +73,22 @@ class _ReportsPageState extends State<ReportsPage> {
             merchantPhone: OperationPhoneController.instance.selectedForFilter,
           ),
           builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Scaffold(
+                appBar: AppBar(title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)), centerTitle: true),
+                body: Center(
+                  child: Text("Erreur de chargement: ${snapshot.error}", style: const TextStyle(color: Colors.red)),
+                ),
+              );
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(
+                appBar: AppBar(title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)), centerTitle: true),
+                body: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
             final txs = snapshot.data ?? [];
             return Scaffold(
               appBar: AppBar(

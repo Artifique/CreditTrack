@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
-import '../../core/theme.dart';
+import '../../core/app_logger.dart';
+import '../../core/tokens.dart';
+import '../../core/user_feedback.dart';
 import '../../models/transaction_model.dart';
 import '../../services/bluetooth_service.dart';
 import '../../services/export_share_service.dart';
 import '../../services/pdf_service.dart';
+import '../../widgets/ui/app_button.dart';
+import '../../widgets/ui/fade_in_up.dart';
+import 'widgets/transaction_detail_ticket.dart';
 
-/// Détail d’une transaction : consultation, impression, export PDF.
-class TransactionDetailPage extends StatelessWidget {
+/// Détail d'une transaction : consultation complète, impact des soldes, impression & export PDF.
+class TransactionDetailPage extends StatefulWidget {
   final TransactionModel transaction;
   final String businessName;
 
@@ -19,134 +25,173 @@ class TransactionDetailPage extends StatelessWidget {
     required this.businessName,
   });
 
-  Future<void> _downloadPdf(BuildContext context) async {
-    final file = await PdfService().generateReceipt(transaction, businessName);
-    await ExportShareService.sharePdf(file, subject: 'Reçu CreditTrak');
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Choisis « Enregistrer » ou une appli (Fichiers, Drive…) pour télécharger le PDF.'),
-        ),
-      );
-    }
-  }
+  @override
+  State<TransactionDetailPage> createState() => _TransactionDetailPageState();
+}
 
-  Future<void> _printSystem(BuildContext context) async {
-    final file = await PdfService().generateReceipt(transaction, businessName);
-    final bytes = await file.readAsBytes();
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
-  }
+class _TransactionDetailPageState extends State<TransactionDetailPage> {
+  bool _isGeneratingPdf = false;
+  bool _isPrintingThermal = false;
+  bool _isPrintingSystem = false;
 
-  Future<void> _printThermal(BuildContext context) async {
+  final _moneyFormat = NumberFormat('#,##0', 'fr_FR');
+
+  Future<void> _downloadPdf() async {
+    if (_isGeneratingPdf) return;
+    setState(() => _isGeneratingPdf = true);
+
     try {
-      await BluetoothPrinterService().printReceipt(transaction, businessName);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Envoyé à l’imprimante Bluetooth (si connectée).')),
-        );
+      final file = await PdfService().generateReceipt(widget.transaction, widget.businessName);
+      await ExportShareService.sharePdf(file, subject: 'Reçu CreditTrack - #${widget.transaction.journalSeq ?? ''}');
+      if (mounted) {
+        UserFeedback.showSuccessToast(context, 'PDF prêt pour le partage');
       }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    } catch (e, st) {
+      AppLogger.error('Erreur génération PDF détail', e, st);
+      if (mounted) {
+        UserFeedback.showErrorToast(context, 'Erreur génération PDF: $e');
       }
+    } finally {
+      if (mounted) setState(() => _isGeneratingPdf = false);
     }
+  }
+
+  Future<void> _printSystem() async {
+    if (_isPrintingSystem) return;
+    setState(() => _isPrintingSystem = true);
+
+    try {
+      final file = await PdfService().generateReceipt(widget.transaction, widget.businessName);
+      final bytes = await file.readAsBytes();
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } catch (e, st) {
+      AppLogger.error('Erreur impression système détail', e, st);
+      if (mounted) {
+        UserFeedback.showErrorToast(context, 'Erreur impression système: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isPrintingSystem = false);
+    }
+  }
+
+  Future<void> _printThermal() async {
+    if (_isPrintingThermal) return;
+    setState(() => _isPrintingThermal = true);
+
+    try {
+      await BluetoothPrinterService().printReceipt(widget.transaction, widget.businessName);
+      if (mounted) {
+        UserFeedback.showSuccessToast(context, 'Ticket envoyé à l’imprimante Bluetooth');
+      }
+    } catch (e, st) {
+      AppLogger.error('Erreur impression thermique détail', e, st);
+      if (mounted) {
+        UserFeedback.showErrorModal(context, e);
+      }
+    } finally {
+      if (mounted) setState(() => _isPrintingThermal = false);
+    }
+  }
+
+  void _copyToClipboard(String text, String label) {
+    Clipboard.setData(ClipboardData(text: text));
+    UserFeedback.showToast(context, '$label copié dans le presse-papiers');
   }
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('dd/MM/yyyy à HH:mm').format(transaction.createdAt);
-    final surface = Theme.of(context).colorScheme.surface;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final variant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tx = widget.transaction;
+
+    final dateFormatted = DateFormat("dd/MM/yyyy 'à' HH:mm").format(tx.createdAt);
+    final amountFormatted = '${_moneyFormat.format(tx.amount)} F';
+    final soldeAvantFormatted = '${_moneyFormat.format(tx.soldeAvant)} F';
+    final soldeApresFormatted = '${_moneyFormat.format(tx.soldeApres)} F';
+    final commissionFormatted = '${_moneyFormat.format(tx.commission)} F';
+
+    final isDepositOrDebit = [
+      TransactionType.depot,
+      TransactionType.nafama,
+      TransactionType.transfertC2c,
+      TransactionType.forfait,
+      TransactionType.sewa,
+      TransactionType.transfertCredit,
+    ].contains(tx.type);
+
+    final amountColor = isDepositOrDebit ? AppTokens.error : AppTokens.success;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Détail de l’opération')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12)],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  businessName.toUpperCase(),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: onSurface),
-                ),
-                const SizedBox(height: 16),
-                if (transaction.journalSeq != null)
-                  _row('N° journal', '#${transaction.journalSeq}', variant, onSurface),
-                _row('Type', TransactionModel.typeDisplayName(transaction.type), variant, onSurface),
-                _row('Catégorie', transaction.category.name, variant, onSurface),
-                _row('Client', transaction.clientName, variant, onSurface),
-                _row('Téléphone', transaction.clientPhone, variant, onSurface),
-                if (transaction.merchantPhone != null && transaction.merchantPhone!.isNotEmpty)
-                  _row('N° transfert', transaction.merchantPhone!, variant, onSurface),
-                _row(
-                  'Montant',
-                  '${NumberFormat('#,##0', 'fr_FR').format(transaction.amount)} CFA',
-                  variant,
-                  onSurface,
-                  valueColor: transaction.type.amountDisplayColor(onSurface),
-                ),
-                _row('Commission', '${NumberFormat('#,##0', 'fr_FR').format(transaction.commission)} CFA', variant, onSurface),
-                _row('Solde après', '${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeApres)} CFA', variant, onSurface),
-                if (transaction.note != null && transaction.note!.trim().isNotEmpty)
-                  _row('Note', transaction.note!, variant, onSurface),
-                const Divider(height: 28),
-                Text(date, style: TextStyle(fontSize: 13, color: variant)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () => _printSystem(context),
-            icon: const Icon(Icons.print_rounded),
-            label: const Text('Imprimer le reçu'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              minimumSize: const Size(double.infinity, 52),
-            ),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => _downloadPdf(context),
-            icon: const Icon(Icons.picture_as_pdf_rounded),
-            label: const Text('Télécharger / partager le PDF'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => _printThermal(context),
-            icon: const Icon(Icons.bluetooth_rounded),
-            label: const Text('Imprimante thermique'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 52)),
+      backgroundColor: isDark ? AppTokens.darkBg : AppTokens.lightBg,
+      appBar: AppBar(
+        title: const Text(
+          'Détail de l’opération',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined, size: 21),
+            tooltip: 'Partager / Exporter',
+            onPressed: _downloadPdf,
           ),
         ],
       ),
-    );
-  }
-
-  Widget _row(String label, String value, Color variant, Color onSurface, {Color? valueColor}) {
-    final vc = valueColor ?? onSurface;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(label, style: TextStyle(color: variant, fontSize: 13)),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
+        child: FadeInUp(
+          child: Column(
+            children: [
+              TransactionDetailTicket(
+                transaction: tx,
+                businessName: widget.businessName,
+                dateFormatted: dateFormatted,
+                amountFormatted: amountFormatted,
+                soldeAvantFormatted: soldeAvantFormatted,
+                soldeApresFormatted: soldeApresFormatted,
+                commissionFormatted: commissionFormatted,
+                amountColor: amountColor,
+                isDark: isDark,
+                onCopy: _copyToClipboard,
+              ),
+              const SizedBox(height: 24),
+              AppButton(
+                label: 'Imprimer Ticket (Système)',
+                icon: Icons.print_rounded,
+                size: AppButtonSize.lg,
+                isFullWidth: true,
+                isLoading: _isPrintingSystem,
+                onPressed: _printSystem,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: AppButton(
+                      label: 'Partager PDF',
+                      icon: Icons.picture_as_pdf_rounded,
+                      variant: AppButtonVariant.outline,
+                      size: AppButtonSize.md,
+                      isLoading: _isGeneratingPdf,
+                      onPressed: _downloadPdf,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: AppButton(
+                      label: 'Thermique',
+                      icon: Icons.bluetooth_rounded,
+                      variant: AppButtonVariant.outline,
+                      size: AppButtonSize.md,
+                      isLoading: _isPrintingThermal,
+                      onPressed: _printThermal,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          Expanded(
-            child: Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: vc, fontSize: 14)),
-          ),
-        ],
+        ),
       ),
     );
   }

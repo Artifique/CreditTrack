@@ -29,10 +29,30 @@ class TransactionModel {
   final double amount;
   final double commission;
   final double soldeApres;
+  final double? soldeAvantRaw;
   final String? note;
   final DateTime createdAt;
   /// Numéro de journal lisible (reçu / audit), assigné côté serveur.
   final int? journalSeq;
+
+  /// Solde du compte avant l'opération (issu de la base ou calculé par le sens du flux)
+  double get soldeAvant {
+    if (soldeAvantRaw != null && soldeAvantRaw! > 0) return soldeAvantRaw!;
+    switch (type) {
+      case TransactionType.depot:
+      case TransactionType.nafama:
+      case TransactionType.transfertC2c:
+      case TransactionType.forfait:
+      case TransactionType.sewa:
+      case TransactionType.transfertCredit:
+        return soldeApres + amount;
+      case TransactionType.retrait:
+      case TransactionType.transfertUv:
+      case TransactionType.transfertProfitUv:
+      case TransactionType.achat:
+        return (soldeApres - amount) > 0 ? (soldeApres - amount) : 0;
+    }
+  }
 
   TransactionModel({
     this.id,
@@ -45,6 +65,7 @@ class TransactionModel {
     required this.amount,
     required this.commission,
     required this.soldeApres,
+    this.soldeAvantRaw,
     this.note,
     required this.createdAt,
     this.journalSeq,
@@ -158,6 +179,9 @@ class TransactionModel {
       amount: asDouble(json['amount']),
       commission: asDouble(json['commission']),
       soldeApres: asDouble(json['solde_apres'] ?? json['balance_after']),
+      soldeAvantRaw: json['balance_before'] != null || json['solde_avant'] != null
+          ? asDouble(json['balance_before'] ?? json['solde_avant'])
+          : null,
       note: json['note'],
       createdAt: DateTime.parse(json['created_at']),
       journalSeq: asInt(json['journal_seq']),

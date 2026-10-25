@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
-import '../../core/theme.dart';
+import '../../core/app_logger.dart';
+import '../../core/tokens.dart';
 import '../../models/transaction_model.dart';
 import '../../services/bluetooth_service.dart';
 import '../../services/export_share_service.dart';
 import '../../services/pdf_service.dart';
+import 'widgets/receipt_info_line.dart';
 
+/// Page d'affichage et d'impression du reçu transactionnel.
 class ReceiptPage extends StatelessWidget {
   final TransactionModel transaction;
   final String businessName;
@@ -19,19 +22,37 @@ class ReceiptPage extends StatelessWidget {
   });
 
   Future<void> _sharePdf(BuildContext context) async {
-    final file = await PdfService().generateReceipt(transaction, businessName);
-    await ExportShareService.sharePdf(file);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PDF prêt — enregistre-le via Partager (Fichiers, Drive…).')),
-      );
+    try {
+      final file = await PdfService().generateReceipt(transaction, businessName);
+      await ExportShareService.sharePdf(file);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('PDF prêt pour le partage.')),
+        );
+      }
+    } catch (e, st) {
+      AppLogger.error('Erreur partage PDF reçu', e, st);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur PDF : $e')),
+        );
+      }
     }
   }
 
   Future<void> _printSystem(BuildContext context) async {
-    final file = await PdfService().generateReceipt(transaction, businessName);
-    final bytes = await file.readAsBytes();
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    try {
+      final file = await PdfService().generateReceipt(transaction, businessName);
+      final bytes = await file.readAsBytes();
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } catch (e, st) {
+      AppLogger.error('Erreur impression système', e, st);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur impression : $e')),
+        );
+      }
+    }
   }
 
   Future<void> _printThermal(BuildContext context) async {
@@ -40,10 +61,11 @@ class ReceiptPage extends StatelessWidget {
       await svc.printReceipt(transaction, businessName);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Envoyé à l’imprimante Bluetooth (si connectée).')),
+          const SnackBar(content: Text('Envoyé à l’imprimante Bluetooth.')),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('Erreur impression thermique', e, st);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Impression Bluetooth : $e')),
@@ -55,9 +77,10 @@ class ReceiptPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final date = DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt);
-    final surface = Theme.of(context).colorScheme.surface;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final variant = Theme.of(context).colorScheme.onSurfaceVariant;
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surface;
+    final onSurface = theme.colorScheme.onSurface;
+    final variant = theme.colorScheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Reçu')),
@@ -72,7 +95,7 @@ class ReceiptPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: surface,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8)],
+                  boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8)],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,18 +109,18 @@ class ReceiptPage extends StatelessWidget {
                     const SizedBox(height: 12),
                     Divider(color: variant.withValues(alpha: 0.3)),
                     if (transaction.journalSeq != null)
-                      _line(context, 'N° journal', '#${transaction.journalSeq}'),
-                    _line(context, 'Type', TransactionModel.typeDisplayName(transaction.type)),
-                    _line(context, 'Catégorie', transaction.category.name),
-                    _line(context, 'Téléphone', transaction.clientPhone),
-                    _line(
-                      context,
-                      'Montant',
-                      '${transaction.amount.toStringAsFixed(0)} CFA',
+                      ReceiptInfoLine(label: 'N° journal', value: '#${transaction.journalSeq}'),
+                    ReceiptInfoLine(label: 'Type', value: TransactionModel.typeDisplayName(transaction.type)),
+                    ReceiptInfoLine(label: 'Catégorie', value: transaction.category.name),
+                    ReceiptInfoLine(label: 'Téléphone', value: transaction.clientPhone),
+                    ReceiptInfoLine(
+                      label: 'Montant',
+                      value: '${transaction.amount.toStringAsFixed(0)} CFA',
                       valueColor: transaction.type.amountDisplayColor(onSurface),
+                      isBold: true,
                     ),
-                    _line(context, 'Commission', '${transaction.commission.toStringAsFixed(0)} CFA'),
-                    _line(context, 'Date', date),
+                    ReceiptInfoLine(label: 'Commission', value: '${transaction.commission.toStringAsFixed(0)} CFA'),
+                    ReceiptInfoLine(label: 'Date', value: date),
                   ],
                 ),
               ),
@@ -134,33 +157,19 @@ class ReceiptPage extends StatelessWidget {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: ElevatedButton(
                 onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppTokens.primary500,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Terminer', style: TextStyle(color: Colors.white)),
+                child: const Text('Terminer', style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _line(BuildContext context, String label, String value, {Color? valueColor}) {
-    final variant = Theme.of(context).colorScheme.onSurfaceVariant;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final vc = valueColor ?? onSurface;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: variant)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: vc)),
-        ],
       ),
     );
   }

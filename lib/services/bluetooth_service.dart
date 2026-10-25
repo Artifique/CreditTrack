@@ -52,7 +52,9 @@ class BluetoothPrinterService {
     bluetooth.printCustom("CLIENT: ${transaction.clientName}", 1, 0);
     bluetooth.printCustom("TEL: ${transaction.clientPhone}", 1, 0);
     bluetooth.printCustom("--------------------------------", 1, 1);
-    bluetooth.printCustom("TOTAL: ${transaction.amount} CFA", 3, 1);
+    bluetooth.printCustom("TOTAL: ${transaction.amount.round()} CFA", 3, 1);
+    bluetooth.printCustom("SOLDE AVANT: ${transaction.soldeAvant.round()} CFA", 1, 0);
+    bluetooth.printCustom("SOLDE APRES: ${transaction.soldeApres.round()} CFA", 2, 0);
     bluetooth.printCustom("--------------------------------", 1, 1);
     bluetooth.printCustom("Date: $dateStr", 1, 1);
     bluetooth.printNewLine();

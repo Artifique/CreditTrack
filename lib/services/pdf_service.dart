@@ -80,14 +80,28 @@ class PdfService {
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("MONTANT:", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                  pw.Text("${transaction.amount} CFA", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.amount.round())} CFA", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("Commission:"),
-                  pw.Text("${transaction.commission} CFA", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.commission.round())} CFA", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text("Solde avant:"),
+                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeAvant.round())} CFA"),
+                ],
+              ),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text("Solde après:"),
+                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeApres.round())} CFA", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Text("---------------------------------"),

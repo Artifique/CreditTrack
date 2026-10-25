@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_logger.dart';
 import '../models/operation_phone_wallet_model.dart';
@@ -7,32 +8,165 @@ import '../models/transaction_model.dart';
 class TransactionController {
   final _supabase = Supabase.instance.client;
 
-  /// Flux temps réel des transactions de l'utilisateur connecté.
-  /// Si [merchantPhone] est renseigné, seules les opérations faites avec ce numéro agent sont retournées.
+  // Cache en mémoire partagé et synchronisé pour toute l'application (Dashboard, Historique, Rapports)
+  static final List<TransactionModel> _allTransactions = [];
+  static final StreamController<List<TransactionModel>> _txStreamController =
+      StreamController<List<TransactionModel>>.broadcast();
+  static RealtimeChannel? _realtimeChannel;
+  static bool _isLoading = false;
+  static bool _isLoaded = false;
+  static String? _loadedUserId;
+
+  /// Flux temps réel des transactions de l'utilisateur connecté sans AUCUNE limite (illimité).
   ///
-  /// Note: l'API `.stream()` de Supabase n'autorise qu'un seul filtre `.eq()` ; le second filtre
-  /// (`merchant_phone`) est donc appliqué côté client sur les données déjà filtrées par `user_id`.
-  Stream<List<TransactionModel>> watchTransactions({String? merchantPhone}) {
+  /// Ce flux effectue une pagination automatique par blocs de 1 000 pour récupérer
+  /// l'intégralité des transactions de la base (même au-delà du plafond serveur PostgREST de 1000)
+  /// et écoute les événements Realtime de Supabase (INSERT, UPDATE, DELETE).
+  Stream<List<TransactionModel>> watchTransactions({String? merchantPhone}) async* {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
-      return const Stream.empty();
+      yield const [];
+      return;
     }
 
-    final phone = merchantPhone?.trim();
+    // Réinitialiser si l'utilisateur connecté a changé
+    if (_loadedUserId != userId) {
+      _allTransactions.clear();
+      _isLoaded = false;
+      _loadedUserId = userId;
+      _setupRealtime(userId);
+    }
 
-    return _supabase
-        .from('transactions')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
-        .order('created_at')
-        .map((data) {
-          var list = data.map((json) => TransactionModel.fromJson(json)).toList();
-          if (phone != null && phone.isNotEmpty) {
-            list = list.where((t) => (t.merchantPhone ?? '').trim() == phone).toList();
-          }
-          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          return list;
-        });
+    // Lancer le chargement complet sans limite si pas encore fait
+    if (!_isLoaded && !_isLoading) {
+      _loadAllTransactions(userId);
+    }
+
+    // Émettre immédiatement les données en cache
+    if (_isLoaded) {
+      yield _filterTransactions(_allTransactions, merchantPhone);
+    }
+
+    // Émettre à chaque mise à jour (insert, update, delete, refresh)
+    await for (final list in _txStreamController.stream) {
+      yield _filterTransactions(list, merchantPhone);
+    }
+  }
+
+  static List<TransactionModel> _filterTransactions(List<TransactionModel> list, String? merchantPhone) {
+    final phone = merchantPhone?.trim();
+    if (phone != null && phone.isNotEmpty) {
+      return list.where((t) => (t.merchantPhone ?? '').trim() == phone).toList();
+    }
+    return list;
+  }
+
+  static void _notify() {
+    if (!_txStreamController.isClosed) {
+      _txStreamController.add(List.unmodifiable(_allTransactions));
+    }
+  }
+
+  /// Charge 100% des transactions par pagination transparente de 1 000 en 1 000
+  static Future<void> _loadAllTransactions(String userId) async {
+    if (_isLoading) return;
+    _isLoading = true;
+
+    try {
+      final supabase = Supabase.instance.client;
+      final List<TransactionModel> all = [];
+      const pageSize = 1000;
+      int from = 0;
+
+      while (true) {
+        final response = await supabase
+            .from('transactions')
+            .select()
+            .eq('user_id', userId)
+            .order('created_at', ascending: false)
+            .range(from, from + pageSize - 1);
+
+        final chunk = (response as List)
+            .map((json) => TransactionModel.fromJson(json))
+            .toList();
+        all.addAll(chunk);
+
+        if (chunk.length < pageSize) {
+          break;
+        }
+        from += pageSize;
+      }
+
+      _allTransactions
+        ..clear()
+        ..addAll(all);
+      _isLoaded = true;
+      _loadedUserId = userId;
+      _notify();
+    } catch (e, st) {
+      AppLogger.error('Erreur chargement transactions illimitées', e, st);
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  /// Écoute les modifications temps réel de Supabase (INSERT, UPDATE, DELETE)
+  static void _setupRealtime(String userId) {
+    try {
+      _realtimeChannel?.unsubscribe();
+    } catch (_) {}
+
+    final supabase = Supabase.instance.client;
+    _realtimeChannel = supabase
+        .channel('public:transactions:$userId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'transactions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (payload) {
+            try {
+              if (payload.eventType == PostgresChangeEvent.insert) {
+                final newTx = TransactionModel.fromJson(payload.newRecord);
+                _allTransactions.removeWhere((t) => t.id == newTx.id);
+                _allTransactions.insert(0, newTx);
+                _notify();
+              } else if (payload.eventType == PostgresChangeEvent.update) {
+                final updatedTx = TransactionModel.fromJson(payload.newRecord);
+                final idx = _allTransactions.indexWhere((t) => t.id == updatedTx.id);
+                if (idx != -1) {
+                  _allTransactions[idx] = updatedTx;
+                } else {
+                  _allTransactions.insert(0, updatedTx);
+                }
+                _allTransactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                _notify();
+              } else if (payload.eventType == PostgresChangeEvent.delete) {
+                final id = payload.oldRecord['id'] as String?;
+                if (id != null) {
+                  _allTransactions.removeWhere((t) => t.id == id);
+                  _notify();
+                }
+              }
+            } catch (e, st) {
+              AppLogger.error('Erreur traitement realtime transaction', e, st);
+            }
+          },
+        )
+        .subscribe();
+  }
+
+  /// Recharge manuellement l'intégralité des transactions depuis le serveur
+  Future<void> refreshTransactions() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId != null) {
+      _isLoading = false;
+      await _loadAllTransactions(userId);
+    }
   }
 
   static String mapTransactionError(Object e) {
@@ -110,7 +244,11 @@ class TransactionController {
     try {
       AppLogger.info('Insertion transaction ${transaction.type.name} user=${transaction.userId}');
       final response = await _supabase.from('transactions').insert(transaction.toJson()).select().single();
-      return TransactionModel.fromJson(response);
+      final created = TransactionModel.fromJson(response);
+      _allTransactions.removeWhere((t) => t.id == created.id);
+      _allTransactions.insert(0, created);
+      _notify();
+      return created;
     } catch (e, st) {
       AppLogger.error('Echec insertion transaction', e, st);
       throw Exception(mapTransactionError(e));
@@ -138,7 +276,16 @@ class TransactionController {
         'p_amount': transaction.amount,
         'p_note': transaction.note,
       });
-      return TransactionModel.fromJson((response as List).first as Map<String, dynamic>);
+      final updated = TransactionModel.fromJson((response as List).first as Map<String, dynamic>);
+      final idx = _allTransactions.indexWhere((t) => t.id == updated.id);
+      if (idx != -1) {
+        _allTransactions[idx] = updated;
+      } else {
+        _allTransactions.insert(0, updated);
+      }
+      _allTransactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _notify();
+      return updated;
     } catch (e, st) {
       AppLogger.error('Echec modification transaction', e, st);
       throw Exception(mapTransactionError(e));
@@ -155,24 +302,33 @@ class TransactionController {
         'p_id': transactionId,
         'p_user_id': userId,
       });
+      _allTransactions.removeWhere((t) => t.id == transactionId);
+      _notify();
     } catch (e, st) {
       AppLogger.error('Echec suppression transaction', e, st);
       throw Exception(mapTransactionError(e));
     }
   }
 
-  Future<List<TransactionModel>> getTransactions({int limit = 100, String? merchantPhone}) async {
+  /// Récupère les transactions (illimité par défaut avec pagination automatique pour dépasser le plafond serveur de 1000).
+  Future<List<TransactionModel>> getTransactions({int? limit, String? merchantPhone}) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return [];
 
-    var q = _supabase.from('transactions').select().eq('user_id', userId);
-    final p = merchantPhone?.trim();
-    if (p != null && p.isNotEmpty) {
-      q = q.eq('merchant_phone', p);
+    if (limit != null) {
+      var q = _supabase.from('transactions').select().eq('user_id', userId);
+      final p = merchantPhone?.trim();
+      if (p != null && p.isNotEmpty) {
+        q = q.eq('merchant_phone', p);
+      }
+      final response = await q.order('created_at', ascending: false).limit(limit);
+      return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
     }
-    final response = await q.order('created_at', ascending: false).limit(limit);
 
-    return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
+    if (!_isLoaded) {
+      await _loadAllTransactions(userId);
+    }
+    return _filterTransactions(_allTransactions, merchantPhone);
   }
 
   /// Numéros client déjà utilisés (les plus récents en premier, dédupliqués),

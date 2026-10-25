@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/tokens.dart';
-import '../auth/login_page.dart';
-import '../dashboard/dashboard_page.dart';
 import 'onboarding_page.dart';
 
 class SplashPage extends StatefulWidget {

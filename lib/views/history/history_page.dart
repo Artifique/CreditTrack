@@ -131,7 +131,12 @@ class _HistoryPageState extends State<HistoryPage> {
                               onPressed: () => _exportPdf(list),
                             ),
                           ),
-                          Expanded(child: _buildTransactionList(list, isDark)),
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: _transactionController.refreshTransactions,
+                              child: _buildTransactionList(list, isDark),
+                            ),
+                          ),
                         ],
                       );
                     },
