@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/tokens.dart';
 
 /// Carte de saisie du montant de l'opération en CFA.
 class OperationAmountInputCard extends StatelessWidget {
@@ -17,7 +18,7 @@ class OperationAmountInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const indigoColor = Color(0xFF4F46E5);
+    final primaryColor = AppTokens.primary500;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +38,7 @@ class OperationAmountInputCard extends StatelessWidget {
             color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
               width: 1.2,
             ),
             boxShadow: const [
@@ -51,9 +52,9 @@ class OperationAmountInputCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.payments_outlined,
-                color: indigoColor,
+                color: primaryColor,
                 size: 24,
               ),
               const SizedBox(width: 14),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/transaction_model.dart';
+import '../../../core/tokens.dart';
 import 'receipt_info_line.dart';
 
 /// Boîte de dialogue de confirmation d'une opération avant soumission.
@@ -43,10 +44,10 @@ class OperationConfirmDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
-              color: Color(0xFFEEF2FF),
+              color: AppTokens.primary50,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.help_outline_rounded, color: Color(0xFF4F46E5), size: 24),
+            child: const Icon(Icons.help_outline_rounded, color: AppTokens.primary500, size: 24),
           ),
           const SizedBox(width: 12),
           Text(
@@ -67,9 +68,9 @@ class OperationConfirmDialog extends StatelessWidget {
           if (simDisplayName != null && simPhone != null)
             ReceiptInfoLine(label: 'Compte / SIM', value: '$simDisplayName ($simPhone) • Solde: $simBalanceFormatted'),
           ReceiptInfoLine(label: 'Numéro Client', value: '$clientPhone ($clientName)'),
-          ReceiptInfoLine(label: 'Montant', value: amountFormatted, valueColor: const Color(0xFF4F46E5), isBold: true),
+          ReceiptInfoLine(label: 'Montant', value: amountFormatted, valueColor: AppTokens.primary500, isBold: true),
           const ReceiptInfoLine(label: 'Frais', value: '0 F'),
-          ReceiptInfoLine(label: 'Commission estimée', value: '+$commissionFormatted', valueColor: const Color(0xFF10B981), isBold: true),
+          ReceiptInfoLine(label: 'Commission estimée', value: '+$commissionFormatted', valueColor: AppTokens.secondary500, isBold: true),
         ],
       ),
       actions: [
@@ -80,7 +81,7 @@ class OperationConfirmDialog extends StatelessWidget {
         ElevatedButton(
           onPressed: isSubmitting ? null : onConfirm,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4F46E5),
+            backgroundColor: AppTokens.primary500,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),

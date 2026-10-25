@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/tokens.dart';
 
 /// Carte de saisie du numéro client avec autocomplétion des numéros récents (état localisé).
 class OperationPhoneInputCard extends StatefulWidget {
@@ -36,7 +37,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
 
   @override
   Widget build(BuildContext context) {
-    const indigoColor = Color(0xFF4F46E5);
+    final primaryColor = AppTokens.primary500;
     final query = widget.controller.text.trim();
     final queryClean = query.replaceAll(' ', '');
 
@@ -82,9 +83,9 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.phone_android_rounded,
-                color: indigoColor,
+                color: primaryColor,
                 size: 24,
               ),
               const SizedBox(width: 14),
@@ -159,7 +160,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     child: Row(
                       children: [
-                        const Icon(Icons.history_rounded, size: 18, color: Color(0xFF4F46E5)),
+                        Icon(Icons.history_rounded, size: 18, color: primaryColor),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(

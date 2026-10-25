@@ -538,7 +538,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   Widget _buildStepTwoForm(bool isDark) {
-    const indigoColor = Color(0xFF4F46E5);
+    final primaryColor = AppTokens.primary500;
 
     return RepaintBoundary(
       child: SingleChildScrollView(
@@ -605,10 +605,10 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _validateFormBeforeConfirm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: indigoColor,
+                  backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shadowColor: indigoColor.withValues(alpha: 0.35),
+                  shadowColor: primaryColor.withValues(alpha: 0.35),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
                 child: _isSubmitting

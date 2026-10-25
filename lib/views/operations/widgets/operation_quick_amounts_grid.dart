@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/tokens.dart';
 
 /// Grille 2×3 des 6 montants rapides conforme à la capture d'écran.
 class OperationQuickAmountsGrid extends StatelessWidget {
@@ -20,27 +21,27 @@ class OperationQuickAmountsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const indigoColor = Color(0xFF4F46E5);
+    final primaryColor = AppTokens.primary500;
 
     return Column(
       children: [
         Row(
           children: [
-            Expanded(child: _buildCard(quickAmounts[0], indigoColor)),
+            Expanded(child: _buildCard(quickAmounts[0], primaryColor)),
             const SizedBox(width: 10),
-            Expanded(child: _buildCard(quickAmounts[1], indigoColor)),
+            Expanded(child: _buildCard(quickAmounts[1], primaryColor)),
             const SizedBox(width: 10),
-            Expanded(child: _buildCard(quickAmounts[2], indigoColor)),
+            Expanded(child: _buildCard(quickAmounts[2], primaryColor)),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: _buildCard(quickAmounts[3], indigoColor)),
+            Expanded(child: _buildCard(quickAmounts[3], primaryColor)),
             const SizedBox(width: 10),
-            Expanded(child: _buildCard(quickAmounts[4], indigoColor)),
+            Expanded(child: _buildCard(quickAmounts[4], primaryColor)),
             const SizedBox(width: 10),
-            Expanded(child: _buildCard(quickAmounts[5], indigoColor)),
+            Expanded(child: _buildCard(quickAmounts[5], primaryColor)),
           ],
         ),
       ],
@@ -59,7 +60,7 @@ class OperationQuickAmountsGrid extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFFEEF2FF)
+                ? AppTokens.primary50
                 : (isDark ? const Color(0xFF1E293B) : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(

@@ -135,7 +135,7 @@ class OperationSuccessView extends StatelessWidget {
               icon: const Icon(Icons.add_circle_outline_rounded),
               label: const Text('NOUVELLE OPÉRATION', style: TextStyle(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4F46E5),
+                backgroundColor: AppTokens.primary500,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
@@ -150,8 +150,8 @@ class OperationSuccessView extends StatelessWidget {
               icon: const Icon(Icons.person_add_alt_1_rounded),
               label: const Text('MÊME CLIENT', style: TextStyle(fontWeight: FontWeight.w700)),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF4F46E5),
-                side: const BorderSide(color: Color(0xFF4F46E5)),
+                foregroundColor: AppTokens.primary500,
+                side: const BorderSide(color: AppTokens.primary500),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: onSameClient,
