@@ -315,23 +315,26 @@ class _SettingsPageState extends State<SettingsPage> {
         AppCard(
           variant: AppCardVariant.elevated,
           padding: EdgeInsets.zero,
-          child: Column(
-            children: List.generate(tiles.length, (index) {
-              final tile = tiles[index];
-              final isLast = index == tiles.length - 1;
-              return Column(
-                children: [
-                  tile,
-                  if (!isLast)
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      indent: 56,
-                      color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder,
-                    ),
-                ],
-              );
-            }),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              children: List.generate(tiles.length, (index) {
+                final tile = tiles[index];
+                final isLast = index == tiles.length - 1;
+                return Column(
+                  children: [
+                    tile,
+                    if (!isLast)
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        indent: 56,
+                        color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder,
+                      ),
+                  ],
+                );
+              }),
+            ),
           ),
         ),
       ],
