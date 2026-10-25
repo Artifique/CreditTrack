@@ -18,7 +18,7 @@ class OperationAmountInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = AppTokens.primary500;
+    const primaryColor = AppTokens.primary500;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +52,7 @@ class OperationAmountInputCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.payments_outlined,
                 color: primaryColor,
                 size: 24,

@@ -69,7 +69,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = AppTokens.primary500;
+    const primaryColor = AppTokens.primary500;
     final queryDigits = widget.controller.text.replaceAll(RegExp(r'\D'), '');
 
     // Filtrage des suggestions selon l'historique
@@ -146,7 +146,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.phone_android_rounded,
                 color: primaryColor,
                 size: 24,
@@ -209,7 +209,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    avatar: Icon(Icons.history_rounded, size: 14, color: primaryColor),
+                    avatar: const Icon(Icons.history_rounded, size: 14, color: primaryColor),
                     label: Text(
                       '$displayPhone$displayName',
                       style: TextStyle(
@@ -283,7 +283,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                             color: AppTokens.primary50,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.person_rounded, size: 16, color: primaryColor),
+                          child: const Icon(Icons.person_rounded, size: 16, color: primaryColor),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

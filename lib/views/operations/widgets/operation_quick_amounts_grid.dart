@@ -21,7 +21,7 @@ class OperationQuickAmountsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = AppTokens.primary500;
+    const primaryColor = AppTokens.primary500;
 
     return Column(
       children: [

@@ -53,7 +53,6 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   String _selectedCategory = 'UV'; // 'UV' ou 'CREDIT'
   TransactionType? _selectedType;
   SimCardModel? _selectedSim;
-  bool _hidePhoneSuggestions = false;
   List<ClientHistorySuggestion> _historySuggestions = [];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -538,7 +537,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   Widget _buildStepTwoForm(bool isDark) {
-    final primaryColor = AppTokens.primary500;
+    const primaryColor = AppTokens.primary500;
 
     return RepaintBoundary(
       child: SingleChildScrollView(
