@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import '../../../core/tokens.dart';
+import 'package:intl/intl.dart';
+import '../../../../controllers/transaction_controller.dart';
+import '../../../../core/tokens.dart';
 
-/// Carte de saisie du numéro client avec autocomplétion réactive des numéros récents.
+/// Carte de saisie du numéro client avec autocomplétion intelligente
+/// basée sur l'historique complet des transactions.
 class OperationPhoneInputCard extends StatefulWidget {
   final TextEditingController controller;
-  final List<String> recentPhones;
+  final List<ClientHistorySuggestion> recentSuggestions;
   final bool isDark;
-  final ValueChanged<String>? onSelectedPhone;
+  final ValueChanged<ClientHistorySuggestion>? onSelectedSuggestion;
   final VoidCallback? onClear;
 
   const OperationPhoneInputCard({
     super.key,
     required this.controller,
-    required this.recentPhones,
+    required this.recentSuggestions,
     required this.isDark,
-    this.onSelectedPhone,
+    this.onSelectedSuggestion,
     this.onClear,
   });
 
@@ -62,34 +65,66 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
     return phone;
   }
 
+  String _formatAmount(double amt) => NumberFormat('#,##0', 'fr_FR').format(amt);
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = AppTokens.primary500;
     final queryDigits = widget.controller.text.replaceAll(RegExp(r'\D'), '');
 
-    final matches = (!_hideSuggestions && queryDigits.isNotEmpty)
-        ? widget.recentPhones.where((p) {
-            final pDigits = p.replaceAll(RegExp(r'\D'), '');
-            return pDigits.startsWith(queryDigits) ||
-                (queryDigits.length >= 2 && pDigits.contains(queryDigits));
-          }).take(4).toList()
-        : <String>[];
+    // Filtrage des suggestions selon l'historique
+    final List<ClientHistorySuggestion> filteredSuggestions;
+    if (_hideSuggestions) {
+      filteredSuggestions = [];
+    } else if (queryDigits.isEmpty) {
+      // Si le champ est vide : proposer les 3 derniers clients récents
+      filteredSuggestions = widget.recentSuggestions.take(3).toList();
+    } else {
+      // Si on commence à taper : filtrer par préfixe ou contenu
+      filteredSuggestions = widget.recentSuggestions.where((s) {
+        final pDigits = s.phone.replaceAll(RegExp(r'\D'), '');
+        final nameLower = s.clientName.toLowerCase();
+        return pDigits.startsWith(queryDigits) ||
+            pDigits.contains(queryDigits) ||
+            nameLower.contains(widget.controller.text.toLowerCase().trim());
+      }).take(4).toList();
+    }
 
-    final shouldShowSuggestions = matches.isNotEmpty &&
-        !(matches.length == 1 &&
-            matches.first.replaceAll(RegExp(r'\D'), '') == queryDigits);
+    final bool showDropdown = !_hideSuggestions &&
+        queryDigits.isNotEmpty &&
+        filteredSuggestions.isNotEmpty &&
+        !(filteredSuggestions.length == 1 &&
+            filteredSuggestions.first.phone.replaceAll(RegExp(r'\D'), '') == queryDigits);
+
+    final bool showRecentChips = !_hideSuggestions &&
+        queryDigits.isEmpty &&
+        widget.recentSuggestions.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Numéro client',
-          style: TextStyle(
-            color: widget.isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
-            fontSize: 14.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.2,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Numéro client',
+              style: TextStyle(
+                color: widget.isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
+              ),
+            ),
+            if (widget.recentSuggestions.isNotEmpty && queryDigits.isEmpty)
+              Text(
+                '${widget.recentSuggestions.length} clients dans l\'historique',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                  color: AppTokens.primary500,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 10),
         Container(
@@ -161,53 +196,136 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
             ],
           ),
         ),
-        if (shouldShowSuggestions)
+
+        // 1. Suggestions sous forme de Chips rapides quand le champ est vide
+        if (showRecentChips) ...[
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: widget.recentSuggestions.take(4).map<Widget>((s) {
+                final displayPhone = _formatPhoneDisplay(s.phone);
+                final displayName = s.clientName != 'Client direct' ? ' (${s.clientName})' : '';
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    avatar: Icon(Icons.history_rounded, size: 14, color: primaryColor),
+                    label: Text(
+                      '$displayPhone$displayName',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                      ),
+                    ),
+                    backgroundColor: widget.isDark
+                        ? const Color(0xFF1E293B)
+                        : AppTokens.primary50,
+                    side: BorderSide(
+                      color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFFFEDD5),
+                      width: 1,
+                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    onPressed: () {
+                      final formatted = _formatPhoneDisplay(s.phone);
+                      widget.controller.text = formatted;
+                      widget.controller.selection = TextSelection.fromPosition(
+                        TextPosition(offset: formatted.length),
+                      );
+                      setState(() => _hideSuggestions = true);
+                      widget.onSelectedSuggestion?.call(s);
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+
+        // 2. Suggestions enrichies sous forme de liste déroulante lors de la frappe
+        if (showDropdown)
           Container(
-            margin: const EdgeInsets.only(top: 6),
+            margin: const EdgeInsets.only(top: 8),
             decoration: BoxDecoration(
               color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
               ),
               boxShadow: const [
-                BoxShadow(color: Color(0x0A000000), blurRadius: 6, offset: Offset(0, 2)),
+                BoxShadow(color: Color(0x0C000000), blurRadius: 10, offset: Offset(0, 4)),
               ],
             ),
             child: Column(
-              children: matches.map((matchPhone) {
+              children: filteredSuggestions.map<Widget>((s) {
+                final formatted = _formatPhoneDisplay(s.phone);
+                final hasName = s.clientName.isNotEmpty && s.clientName != 'Client direct';
+
                 return InkWell(
                   onTap: () {
-                    final formatted = _formatPhoneDisplay(matchPhone);
                     widget.controller.text = formatted;
                     widget.controller.selection = TextSelection.fromPosition(
                       TextPosition(offset: formatted.length),
                     );
                     setState(() => _hideSuggestions = true);
-                    widget.onSelectedPhone?.call(formatted);
+                    widget.onSelectedSuggestion?.call(s);
                     FocusScope.of(context).unfocus();
                   },
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                     child: Row(
                       children: [
-                        Icon(Icons.history_rounded, size: 18, color: primaryColor),
+                        Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppTokens.primary50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.person_rounded, size: 16, color: primaryColor),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            _formatPhoneDisplay(matchPhone),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                formatted,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                                ),
+                              ),
+                              if (hasName)
+                                Text(
+                                  s.clientName,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                        const Text(
-                          'Client récent',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                        ),
+                        if (s.lastAmount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppTokens.secondary50,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              '${_formatAmount(s.lastAmount)} F',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppTokens.secondary500,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),

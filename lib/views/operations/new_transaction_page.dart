@@ -54,7 +54,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   TransactionType? _selectedType;
   SimCardModel? _selectedSim;
   bool _hidePhoneSuggestions = false;
-  List<String> _historyPhones = [];
+  List<ClientHistorySuggestion> _historySuggestions = [];
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _showOmBalance = true;
@@ -95,9 +95,9 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       }
     });
 
-    _transactionController.getRecentClientPhones().then((phones) {
+    _transactionController.getRecentClientHistorySuggestions().then((suggestions) {
       if (mounted) {
-        setState(() => _historyPhones = phones);
+        setState(() => _historySuggestions = suggestions);
       }
     });
 
@@ -550,8 +550,15 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             if (!_isProfitTransfer) ...[
               OperationPhoneInputCard(
                 controller: _clientPhoneController,
-                recentPhones: _historyPhones,
+                recentSuggestions: _historySuggestions,
                 isDark: isDark,
+                onSelectedSuggestion: (suggestion) {
+                  _clientNameController.text = suggestion.clientName;
+                  if (_amountController.text.isEmpty && suggestion.lastAmount > 0) {
+                    _amountController.text = suggestion.lastAmount.round().toString();
+                    _calculateCommission();
+                  }
+                },
               ),
               const SizedBox(height: 24),
             ],

@@ -5,6 +5,21 @@ import '../models/operation_phone_wallet_model.dart';
 import '../models/profile_model.dart';
 import '../models/transaction_model.dart';
 
+/// Modèle représentant une suggestion client issue de l'historique des transactions.
+class ClientHistorySuggestion {
+  final String phone;
+  final String clientName;
+  final double lastAmount;
+  final DateTime? lastDate;
+
+  const ClientHistorySuggestion({
+    required this.phone,
+    required this.clientName,
+    required this.lastAmount,
+    this.lastDate,
+  });
+}
+
 class TransactionController {
   final _supabase = Supabase.instance.client;
 
@@ -331,28 +346,64 @@ class TransactionController {
     return _filterTransactions(_allTransactions, merchantPhone);
   }
 
+  /// Récupère la liste enrichie des clients issus de l'historique des transactions.
+  /// Dédupliqués, triés du plus récent au plus ancien.
+  Future<List<ClientHistorySuggestion>> getRecentClientHistorySuggestions() async {
+    final seen = <String>{};
+    final result = <ClientHistorySuggestion>[];
+
+    void addFromTx(String rawPhone, String rawName, double amount, DateTime? date) {
+      final phone = rawPhone.trim();
+      final digits = phone.replaceAll(RegExp(r'\D'), '');
+      if (digits.length >= 8 && seen.add(digits)) {
+        result.add(ClientHistorySuggestion(
+          phone: phone,
+          clientName: rawName.trim().isEmpty ? 'Client direct' : rawName.trim(),
+          lastAmount: amount,
+          lastDate: date,
+        ));
+      }
+    }
+
+    // 1. Depuis le cache mémoire en temps réel
+    for (final t in _allTransactions) {
+      if (t.type == TransactionType.transfertProfitUv) continue;
+      addFromTx(t.clientPhone, t.clientName, t.amount, t.createdAt);
+    }
+
+    // 2. Si le cache mémoire est incomplet, interroger Supabase
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId != null && result.length < 50) {
+      try {
+        final rows = await _supabase
+            .from('transactions')
+            .select('client_phone, client_name, amount, created_at, type')
+            .eq('user_id', userId)
+            .order('created_at', ascending: false)
+            .limit(100);
+
+        for (final r in rows as List<dynamic>) {
+          final m = Map<String, dynamic>.from(r as Map);
+          if (m['type'] == 'transfert_profit_uv') continue;
+          final phone = (m['client_phone'] as String?)?.trim() ?? '';
+          final name = (m['client_name'] as String?)?.trim() ?? '';
+          final amount = (m['amount'] as num?)?.toDouble() ?? 0.0;
+          final dateStr = m['created_at'] as String?;
+          final date = dateStr != null ? DateTime.tryParse(dateStr) : null;
+          addFromTx(phone, name, amount, date);
+        }
+      } catch (e) {
+        AppLogger.error('Erreur getRecentClientHistorySuggestions Supabase: $e');
+      }
+    }
+    return result;
+  }
+
   /// Numéros client déjà utilisés (les plus récents en premier, dédupliqués),
   /// pour suggestion automatique à la saisie d'une nouvelle transaction.
   Future<List<String>> getRecentClientPhones() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) return [];
-
-    final rows = await _supabase
-        .from('transactions')
-        .select('client_phone, type')
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
-
-    final seen = <String>{};
-    final result = <String>[];
-    for (final r in rows as List<dynamic>) {
-      final m = Map<String, dynamic>.from(r as Map);
-      if (m['type'] == 'transfert_profit_uv') continue;
-      final phone = (m['client_phone'] as String?)?.trim() ?? '';
-      if (phone.isEmpty || !seen.add(phone)) continue;
-      result.add(phone);
-    }
-    return result;
+    final suggestions = await getRecentClientHistorySuggestions();
+    return suggestions.map((s) => s.phone).toList();
   }
 
   // Calculer les statistiques simples pour le dashboard
