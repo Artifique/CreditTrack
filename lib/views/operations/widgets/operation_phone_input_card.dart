@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/tokens.dart';
 
-/// Carte de saisie du numéro client avec autocomplétion des numéros récents (état localisé).
+/// Carte de saisie du numéro client avec autocomplétion réactive des numéros récents.
 class OperationPhoneInputCard extends StatefulWidget {
   final TextEditingController controller;
   final List<String> recentPhones;
@@ -25,6 +25,33 @@ class OperationPhoneInputCard extends StatefulWidget {
 class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
   bool _hideSuggestions = false;
 
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_handleTextChange);
+  }
+
+  @override
+  void didUpdateWidget(OperationPhoneInputCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_handleTextChange);
+      widget.controller.addListener(_handleTextChange);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_handleTextChange);
+    super.dispose();
+  }
+
+  void _handleTextChange() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   String _formatPhoneDisplay(String phone) {
     final digits = phone.replaceAll(RegExp(r'\D'), '');
     if (digits.length == 9) {
@@ -38,18 +65,19 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = AppTokens.primary500;
-    final query = widget.controller.text.trim();
-    final queryClean = query.replaceAll(' ', '');
+    final queryDigits = widget.controller.text.replaceAll(RegExp(r'\D'), '');
 
-    final matches = (!_hideSuggestions && query.isNotEmpty)
-        ? widget.recentPhones
-            .where((p) => p.replaceAll(' ', '').startsWith(queryClean))
-            .take(4)
-            .toList()
+    final matches = (!_hideSuggestions && queryDigits.isNotEmpty)
+        ? widget.recentPhones.where((p) {
+            final pDigits = p.replaceAll(RegExp(r'\D'), '');
+            return pDigits.startsWith(queryDigits) ||
+                (queryDigits.length >= 2 && pDigits.contains(queryDigits));
+          }).take(4).toList()
         : <String>[];
 
     final shouldShowSuggestions = matches.isNotEmpty &&
-        !(matches.length == 1 && matches.first.replaceAll(' ', '') == queryClean);
+        !(matches.length == 1 &&
+            matches.first.replaceAll(RegExp(r'\D'), '') == queryDigits);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +97,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
             color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+              color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
               width: 1.2,
             ),
             boxShadow: const [
@@ -112,8 +140,9 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                   ),
                   onChanged: (val) {
                     if (_hideSuggestions) {
-                      setState(() => _hideSuggestions = false);
+                      _hideSuggestions = false;
                     }
+                    setState(() {});
                   },
                 ),
               ),
@@ -151,6 +180,9 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                   onTap: () {
                     final formatted = _formatPhoneDisplay(matchPhone);
                     widget.controller.text = formatted;
+                    widget.controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: formatted.length),
+                    );
                     setState(() => _hideSuggestions = true);
                     widget.onSelectedPhone?.call(formatted);
                     FocusScope.of(context).unfocus();
