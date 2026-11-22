@@ -17,17 +17,20 @@ class _OnboardingPageState extends State<OnboardingPage> {
   final List<_OnboardingData> _pages = const [
     _OnboardingData(
       title: "Gestion Simplifiée",
-      description: "Gérez vos opérations de transfert et de crédit de manière fluide et intuitive.",
+      description:
+          "Gérez vos opérations de transfert et de crédit de manière fluide et intuitive.",
       image: "assets/images/onboarding/ob1.jpg",
     ),
     _OnboardingData(
       title: "Calcul Automatique",
-      description: "Calcul automatique de vos commissions en fonction de vos différents forfaits.",
+      description:
+          "Calcul automatique de vos commissions en fonction de vos différents forfaits.",
       image: "assets/images/onboarding/ob2.jpg",
     ),
     _OnboardingData(
       title: "Statistiques Claires",
-      description: "Générez des rapports et exportez en PDF pour visualiser l'évolution de vos bénéfices.",
+      description:
+          "Générez des rapports et exportez en PDF pour visualiser l'évolution de vos bénéfices.",
       image: "assets/images/onboarding/ob3.jpg",
     ),
   ];
@@ -73,13 +76,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 child: Text(
                   "Passer",
                   style: TextStyle(
-                    color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                    color: isDark
+                        ? AppTokens.darkTextSecondary
+                        : AppTokens.lightTextSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ),
-            
+
             // PageView
             Expanded(
               child: PageView.builder(
@@ -115,29 +120,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         decoration: BoxDecoration(
                           color: _currentPage == index
                               ? AppTokens.primary500
-                              : (isDark ? AppTokens.darkBorder : AppTokens.lightBorderHover),
+                              : (isDark
+                                  ? AppTokens.darkBorder
+                                  : AppTokens.lightBorderHover),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                   ),
-                  
+
                   // Next / Start Button
                   ElevatedButton(
                     onPressed: _nextPage,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTokens.primary500,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                        borderRadius:
+                            BorderRadius.circular(AppTokens.radiusPill),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          _currentPage == _pages.length - 1 ? "Commencer" : "Suivant",
+                          _currentPage == _pages.length - 1
+                              ? "Commencer"
+                              : "Suivant",
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         if (_currentPage < _pages.length - 1) ...[
@@ -208,7 +219,9 @@ class _OnboardingContent extends StatelessWidget {
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
-                    color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                    color: isDark
+                        ? AppTokens.darkTextPrimary
+                        : AppTokens.lightTextPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -218,7 +231,9 @@ class _OnboardingContent extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.5,
-                    color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                    color: isDark
+                        ? AppTokens.darkTextSecondary
+                        : AppTokens.lightTextSecondary,
                   ),
                   textAlign: TextAlign.center,
                 ),

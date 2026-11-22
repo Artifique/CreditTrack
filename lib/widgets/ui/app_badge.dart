@@ -82,7 +82,8 @@ class AppBadge extends StatelessWidget {
         break;
 
       case AppBadgeVariant.neutral:
-        color = isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary;
+        color =
+            isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary;
         bg = isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle;
         border = isDark ? AppTokens.darkBorder : AppTokens.lightBorder;
         break;

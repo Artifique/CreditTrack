@@ -35,7 +35,8 @@ class AuthController {
         password: password,
         data: {
           'business_name': businessName,
-          if (ownerName != null && ownerName.trim().isNotEmpty) 'owner_name': ownerName.trim(),
+          if (ownerName != null && ownerName.trim().isNotEmpty)
+            'owner_name': ownerName.trim(),
         },
       );
       return response;

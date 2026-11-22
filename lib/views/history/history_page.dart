@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_formatters.dart';
 import '../../core/tokens.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
@@ -74,7 +75,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Historique des Opérations", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+        title: const Text("Historique des Opérations",
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
         centerTitle: true,
         actions: [
           IconButton(
@@ -112,7 +114,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 builder: (context, _) {
                   return StreamBuilder<List<TransactionModel>>(
                     stream: _transactionController.watchTransactions(
-                      merchantPhone: OperationPhoneController.instance.selectedForFilter,
+                      merchantPhone:
+                          OperationPhoneController.instance.selectedForFilter,
                     ),
                     builder: (context, snapshot) {
                       final list = _applyFilters(snapshot.data ?? []);
@@ -123,7 +126,9 @@ class _HistoryPageState extends State<HistoryPage> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                             child: AppButton(
-                              label: _exportingPdf ? 'Exportation en cours…' : 'Exporter la sélection en PDF',
+                              label: _exportingPdf
+                                  ? 'Exportation en cours…'
+                                  : 'Exporter la sélection en PDF',
                               icon: Icons.picture_as_pdf_rounded,
                               variant: AppButtonVariant.outline,
                               isFullWidth: true,
@@ -133,7 +138,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           ),
                           Expanded(
                             child: RefreshIndicator(
-                              onRefresh: _transactionController.refreshTransactions,
+                              onRefresh:
+                                  _transactionController.refreshTransactions,
                               child: _buildTransactionList(list, isDark),
                             ),
                           ),
@@ -232,9 +238,18 @@ class _HistoryPageState extends State<HistoryPage> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _FilterChip(label: "Tout", isSelected: _categoryFilter == "Tout", onTap: () => _setCategory("Tout")),
-          _FilterChip(label: "UV", isSelected: _categoryFilter == "UV", onTap: () => _setCategory("UV")),
-          _FilterChip(label: "Crédit", isSelected: _categoryFilter == "CREDIT", onTap: () => _setCategory("CREDIT")),
+          _FilterChip(
+              label: "Tout",
+              isSelected: _categoryFilter == "Tout",
+              onTap: () => _setCategory("Tout")),
+          _FilterChip(
+              label: "UV",
+              isSelected: _categoryFilter == "UV",
+              onTap: () => _setCategory("UV")),
+          _FilterChip(
+              label: "Crédit",
+              isSelected: _categoryFilter == "CREDIT",
+              onTap: () => _setCategory("CREDIT")),
         ],
       ),
     );
@@ -274,7 +289,8 @@ class _HistoryPageState extends State<HistoryPage> {
   void _setCategory(String category) {
     setState(() {
       _categoryFilter = category;
-      if (_typeFilter != null && !_typesForCategory(category).contains(_typeFilter)) {
+      if (_typeFilter != null &&
+          !_typesForCategory(category).contains(_typeFilter)) {
         _typeFilter = null;
       }
     });
@@ -298,7 +314,8 @@ class _HistoryPageState extends State<HistoryPage> {
   bool _inDateRange(DateTime d) {
     final day = DateTime(d.year, d.month, d.day);
     if (_filterFrom != null) {
-      final from = DateTime(_filterFrom!.year, _filterFrom!.month, _filterFrom!.day);
+      final from =
+          DateTime(_filterFrom!.year, _filterFrom!.month, _filterFrom!.day);
       if (day.isBefore(from)) return false;
     }
     if (_filterTo != null) {
@@ -317,7 +334,8 @@ class _HistoryPageState extends State<HistoryPage> {
         tx.clientPhone.replaceAll(' ', '').contains(qDigits) ||
         (tx.merchantPhone ?? '').replaceAll(' ', '').contains(qDigits) ||
         (tx.journalSeq?.toString() ?? '').contains(q);
-    final byCategory = _categoryFilter == 'Tout' || tx.category.name == _categoryFilter;
+    final byCategory =
+        _categoryFilter == 'Tout' || tx.category.name == _categoryFilter;
     final byType = _typeFilter == null || tx.type == _typeFilter;
     return bySearch && byCategory && byType && _inDateRange(tx.createdAt);
   }
@@ -347,7 +365,6 @@ class _HistoryPageState extends State<HistoryPage> {
     final count = txs.length;
     final totalAmount = txs.fold<double>(0, (s, t) => s + t.amount);
     final totalCommission = txs.fold<double>(0, (s, t) => s + t.commission);
-    final money = NumberFormat('#,##0', 'fr_FR');
 
     return Container(
       width: double.infinity,
@@ -358,12 +375,22 @@ class _HistoryPageState extends State<HistoryPage> {
         child: Row(
           children: [
             _SummaryStat(label: 'Opérations', value: '$count', isDark: isDark),
-            Container(height: 28, width: 1, color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
-            _SummaryStat(label: 'Volume', value: '${money.format(totalAmount.round())} F', isDark: isDark),
-            Container(height: 28, width: 1, color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
+            Container(
+                height: 28,
+                width: 1,
+                color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
+            _SummaryStat(
+                label: 'Volume',
+                value: AppFormatters.formatMoneyShort(totalAmount.round()),
+                isDark: isDark),
+            Container(
+                height: 28,
+                width: 1,
+                color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
             _SummaryStat(
               label: 'Commissions',
-              value: '${money.format(totalCommission.round())} F',
+              value:
+                  '+${AppFormatters.formatMoneyShort(totalCommission.round())}',
               isHighlight: true,
               isDark: isDark,
             ),
@@ -378,7 +405,8 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<void> _exportPdf(List<TransactionModel> filtered) async {
     if (filtered.isEmpty) {
       if (!mounted) return;
-      UserFeedback.showToast(context, 'Aucune transaction à exporter.', type: AppToastType.warning);
+      UserFeedback.showToast(context, 'Aucune transaction à exporter.',
+          type: AppToastType.warning);
       return;
     }
     setState(() => _exportingPdf = true);
@@ -388,7 +416,9 @@ class _HistoryPageState extends State<HistoryPage> {
         filters: HistoryReportFilters(
           periodLabel: _periodLabel(),
           categoryLabel: _categoryLabel(),
-          typeLabel: _typeFilter == null ? 'Tous les types' : TransactionModel.typeDisplayName(_typeFilter!),
+          typeLabel: _typeFilter == null
+              ? 'Tous les types'
+              : TransactionModel.typeDisplayName(_typeFilter!),
           searchQuery: _searchController.text,
           merchantPhone: OperationPhoneController.instance.selectedForFilter,
         ),
@@ -408,7 +438,8 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  Widget _buildTransactionList(List<TransactionModel> transactions, bool isDark) {
+  Widget _buildTransactionList(
+      List<TransactionModel> transactions, bool isDark) {
     if (transactions.isEmpty) {
       return Center(
         child: Column(
@@ -417,13 +448,16 @@ class _HistoryPageState extends State<HistoryPage> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle,
+                color:
+                    isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.search_off_rounded,
                 size: 40,
-                color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                color: isDark
+                    ? AppTokens.darkTextTertiary
+                    : AppTokens.lightTextTertiary,
               ),
             ),
             const SizedBox(height: 12),
@@ -432,7 +466,9 @@ class _HistoryPageState extends State<HistoryPage> {
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 15,
-                color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                color: isDark
+                    ? AppTokens.darkTextPrimary
+                    : AppTokens.lightTextPrimary,
               ),
             ),
             const SizedBox(height: 4),
@@ -440,7 +476,9 @@ class _HistoryPageState extends State<HistoryPage> {
               "Essayez de modifier vos filtres ou la période sélectionnée.",
               style: TextStyle(
                 fontSize: 12.5,
-                color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                color: isDark
+                    ? AppTokens.darkTextTertiary
+                    : AppTokens.lightTextTertiary,
               ),
             ),
           ],
@@ -459,7 +497,8 @@ class _HistoryPageState extends State<HistoryPage> {
             Navigator.push<void>(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => TransactionDetailPage(transaction: tx, businessName: _businessName),
+                builder: (_) => TransactionDetailPage(
+                    transaction: tx, businessName: _businessName),
               ),
             );
           },
@@ -475,9 +514,12 @@ class _HistoryPageState extends State<HistoryPage> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Supprimer la transaction"),
-            content: const Text("Cette action va annuler son impact sur le solde. Continuer ?"),
+            content: const Text(
+                "Cette action va annuler son impact sur le solde. Continuer ?"),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Annuler")),
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Annuler")),
               AppButton(
                 label: "Supprimer",
                 variant: AppButtonVariant.danger,
@@ -504,7 +546,8 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _openEditDialog(TransactionModel tx) async {
-    final amountCtrl = TextEditingController(text: tx.amount.toStringAsFixed(0));
+    final amountCtrl =
+        TextEditingController(text: tx.amount.toStringAsFixed(0));
     final phoneCtrl = TextEditingController(text: tx.clientPhone);
     var selectedCategory = tx.category;
     var selectedType = tx.type;
@@ -513,11 +556,15 @@ class _HistoryPageState extends State<HistoryPage> {
       context: context,
       builder: (dialogCtx) => StatefulBuilder(
         builder: (context, setModalState) {
-          final types = selectedCategory == TransactionCategory.CREDIT ? _creditTypes : _uvTypes;
-          final isProfitTransfer = selectedType == TransactionType.transfertProfitUv;
+          final types = selectedCategory == TransactionCategory.CREDIT
+              ? _creditTypes
+              : _uvTypes;
+          final isProfitTransfer =
+              selectedType == TransactionType.transfertProfitUv;
 
           return AlertDialog(
-            title: const Text("Modifier la transaction", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            title: const Text("Modifier la transaction",
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -526,14 +573,19 @@ class _HistoryPageState extends State<HistoryPage> {
                     initialValue: selectedCategory,
                     decoration: const InputDecoration(labelText: "Catégorie"),
                     items: const [
-                      DropdownMenuItem(value: TransactionCategory.UV, child: Text("UV")),
-                      DropdownMenuItem(value: TransactionCategory.CREDIT, child: Text("Crédit")),
+                      DropdownMenuItem(
+                          value: TransactionCategory.UV, child: Text("UV")),
+                      DropdownMenuItem(
+                          value: TransactionCategory.CREDIT,
+                          child: Text("Crédit")),
                     ],
                     onChanged: (cat) {
                       if (cat == null) return;
                       setModalState(() {
                         selectedCategory = cat;
-                        selectedType = cat == TransactionCategory.CREDIT ? _creditTypes.first : _uvTypes.first;
+                        selectedType = cat == TransactionCategory.CREDIT
+                            ? _creditTypes.first
+                            : _uvTypes.first;
                       });
                     },
                   ),
@@ -558,21 +610,25 @@ class _HistoryPageState extends State<HistoryPage> {
                   if (!isProfitTransfer) ...[
                     TextField(
                       controller: phoneCtrl,
-                      decoration: const InputDecoration(labelText: "Téléphone client"),
+                      decoration:
+                          const InputDecoration(labelText: "Téléphone client"),
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 12),
                   ],
                   TextField(
                     controller: amountCtrl,
-                    decoration: const InputDecoration(labelText: "Montant (CFA)"),
+                    decoration:
+                        const InputDecoration(labelText: "Montant (CFA)"),
                     keyboardType: TextInputType.number,
                   ),
                 ],
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogCtx, false), child: const Text("Annuler")),
+              TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx, false),
+                  child: const Text("Annuler")),
               AppButton(
                 label: "Enregistrer",
                 size: AppButtonSize.sm,
@@ -584,17 +640,24 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
 
-    if (saved != true) return;
+    final rawAmountText = amountCtrl.text.trim().replaceAll(' ', '');
+    final rawPhoneText = phoneCtrl.text.trim();
+    amountCtrl.dispose();
+    phoneCtrl.dispose();
 
-    final amount = double.tryParse(amountCtrl.text.trim().replaceAll(' ', '')) ?? 0;
+    if (saved != true || !mounted) return;
+
+    final amount = double.tryParse(rawAmountText) ?? 0;
     if (amount <= 0) {
-      await UserFeedback.showErrorModal(context, Exception('Montant strictement positif requis.'));
+      await UserFeedback.showErrorModal(
+          context, Exception('Montant strictement positif requis.'));
       return;
     }
     if (selectedType != TransactionType.transfertProfitUv) {
-      final digits = phoneCtrl.text.replaceAll(RegExp(r'\D'), '');
-      if (phoneCtrl.text.trim().isEmpty || digits.length < 8) {
-        await UserFeedback.showErrorModal(context, Exception('Téléphone client invalide (au moins 8 chiffres).'));
+      final digits = rawPhoneText.replaceAll(RegExp(r'\D'), '');
+      if (rawPhoneText.isEmpty || digits.length < 8) {
+        await UserFeedback.showErrorModal(context,
+            Exception('Téléphone client invalide (au moins 8 chiffres).'));
         return;
       }
     }
@@ -605,14 +668,16 @@ class _HistoryPageState extends State<HistoryPage> {
         userId: tx.userId,
         type: selectedType,
         category: selectedCategory,
-        clientName: selectedType == TransactionType.transfertProfitUv ? 'Transfert interne' : tx.clientName,
+        clientName: selectedType == TransactionType.transfertProfitUv
+            ? 'Transfert interne'
+            : tx.clientName,
         clientPhone: selectedType == TransactionType.transfertProfitUv
             ? (tx.merchantPhone ?? tx.clientPhone)
-            : phoneCtrl.text.trim(),
+            : rawPhoneText,
         merchantPhone: tx.merchantPhone,
         amount: amount,
-        commission:
-            TransactionModel.calculateCommission(selectedType, amount, rates: _commissionRates),
+        commission: TransactionModel.calculateCommission(selectedType, amount,
+            rates: _commissionRates),
         soldeApres: tx.soldeApres,
         note: tx.note,
         createdAt: tx.createdAt,
@@ -665,7 +730,9 @@ class _DateReadOnlyField extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                    color: isDark
+                        ? AppTokens.darkTextTertiary
+                        : AppTokens.lightTextTertiary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -675,7 +742,9 @@ class _DateReadOnlyField extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13.5,
-                    color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                    color: isDark
+                        ? AppTokens.darkTextPrimary
+                        : AppTokens.lightTextPrimary,
                   ),
                 ),
               ],
@@ -683,7 +752,9 @@ class _DateReadOnlyField extends StatelessWidget {
             Icon(
               Icons.calendar_today_rounded,
               size: 16,
-              color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+              color: isDark
+                  ? AppTokens.darkTextTertiary
+                  : AppTokens.lightTextTertiary,
             ),
           ],
         ),
@@ -715,7 +786,9 @@ class _SummaryStat extends StatelessWidget {
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w500,
-              color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+              color: isDark
+                  ? AppTokens.darkTextSecondary
+                  : AppTokens.lightTextSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -727,7 +800,9 @@ class _SummaryStat extends StatelessWidget {
               fontSize: 13.5,
               color: isHighlight
                   ? (isDark ? AppTokens.secondary300 : AppTokens.secondary600)
-                  : (isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary),
+                  : (isDark
+                      ? AppTokens.darkTextPrimary
+                      : AppTokens.lightTextPrimary),
             ),
           ),
         ],
@@ -741,7 +816,8 @@ class _FilterChip extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+  const _FilterChip(
+      {required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -774,7 +850,9 @@ class _FilterChip extends StatelessWidget {
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected
                   ? (isDark ? AppTokens.primary300 : AppTokens.primary600)
-                  : (isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary),
+                  : (isDark
+                      ? AppTokens.darkTextSecondary
+                      : AppTokens.lightTextSecondary),
             ),
           ),
         ),
@@ -806,139 +884,312 @@ class _TransactionHistoryItem extends StatelessWidget {
     late final Color iconBg;
     late final Color iconFg;
     late final IconData iconData;
-    late final AppBadgeVariant badgeVariant;
+    late final Color amountColor;
 
-    if (isDepot) {
-      iconBg = isDark ? AppTokens.darkErrorBg : AppTokens.errorBg;
-      iconFg = AppTokens.error;
-      iconData = Icons.arrow_downward_rounded;
-      badgeVariant = AppBadgeVariant.error;
-    } else if (isRetrait) {
-      iconBg = isDark ? AppTokens.darkSuccessBg : AppTokens.successBg;
-      iconFg = AppTokens.success;
+    if (isRetrait) {
+      iconBg = const Color(0xFFE6F9EE);
+      iconFg = const Color(0xFF22C55E);
       iconData = Icons.arrow_upward_rounded;
-      badgeVariant = AppBadgeVariant.success;
+      amountColor = const Color(0xFF22C55E);
+    } else if (isDepot) {
+      iconBg = const Color(0xFFFEE2E2);
+      iconFg = const Color(0xFFEF4444);
+      iconData = Icons.arrow_downward_rounded;
+      amountColor = const Color(0xFFEF4444);
     } else {
-      iconBg = isDark ? AppTokens.darkInfoBg : AppTokens.infoBg;
-      iconFg = AppTokens.info;
+      iconBg = const Color(0xFFEEF2FF);
+      iconFg = const Color(0xFF6366F1);
       iconData = Icons.sync_alt_rounded;
-      badgeVariant = AppBadgeVariant.info;
+      amountColor = const Color(0xFF38BDF8);
     }
 
-    final amountColor = t.amountDisplayColor(
-      isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
-    );
+    final dateStr =
+        DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt);
 
-    final money = NumberFormat('#,##0', 'fr_FR');
-    final dateStr = DateFormat('dd/MM/yyyy • HH:mm').format(transaction.createdAt);
+    final txNumber =
+        'N°${transaction.journalSeq ?? (transaction.id != null && transaction.id!.length >= 4 ? transaction.id!.substring(0, 4) : (transaction.createdAt.millisecondsSinceEpoch % 9000 + 1000))}';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: AppCard(
-        variant: AppCardVariant.elevated,
-        padding: const EdgeInsets.all(14),
-        onTap: onOpenDetail,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              ),
-              child: Icon(iconData, color: iconFg, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          transaction.clientName.isNotEmpty ? transaction.clientName : "Client direct",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14.5,
-                            color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      AppBadge(
-                        label: TransactionModel.typeDisplayName(transaction.type),
-                        variant: badgeVariant,
-                        fontSize: 11,
-                      ),
-                    ],
+    final lineInfo = (transaction.merchantPhone != null &&
+            transaction.merchantPhone!.trim().isNotEmpty)
+        ? 'Transfert ${transaction.merchantPhone!.trim()}'
+        : 'Transfert ${transaction.category.name}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF141C2B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF232F45) : const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.25)
+                : Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onOpenDetail,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Squircle Badge
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  const SizedBox(height: 3),
-                  Row(
+                  child: Center(
+                    child: Icon(iconData, color: iconFg, size: 28),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Middle details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (transaction.clientPhone.trim().isNotEmpty) ...[
-                        Text(
-                          "${transaction.clientPhone} • ",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
-                          ),
+                      Text(
+                        transaction.clientName.trim().isNotEmpty
+                            ? transaction.clientName.trim()
+                            : "Client direct",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16.5,
+                          color:
+                              isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        TransactionModel.typeDisplayName(transaction.type),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF818CF8),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        transaction.clientPhone.trim().isNotEmpty
+                            ? transaction.clientPhone.trim()
+                            : "Non renseigné",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        txNumber,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? const Color(0xFFCBD5E1)
+                              : const Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lineInfo,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF818CF8),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
                       Text(
                         dateStr,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF0F2922)
+                              : const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF065F46)
+                                : const Color(0xFFA7F3D0),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.payments_rounded,
+                              size: 13,
+                              color: Color(0xFF10B981),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              "Espèce : ",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? const Color(0xFF6EE7B7)
+                                    : const Color(0xFF047857),
+                              ),
+                            ),
+                            Text(
+                              "${AppFormatters.formatAmount(transaction.soldeEspeceAvant)} F",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: isDark
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFF64748B),
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 11,
+                                color: isDark
+                                    ? const Color(0xFF6EE7B7)
+                                    : const Color(0xFF047857),
+                              ),
+                            ),
+                            Text(
+                              "${AppFormatters.formatAmount(transaction.soldeEspeceApres)} F",
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF065F46),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      GestureDetector(
+                        onTap: onOpenDetail,
+                        behavior: HitTestBehavior.opaque,
+                        child: const Text(
+                          "Détail & reçu",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF60A5FA),
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  "${money.format(transaction.amount)} F",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15.5,
-                    color: amountColor,
-                  ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '+${money.format(transaction.commission)} F com.',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? AppTokens.secondary300 : AppTokens.secondary600,
-                  ),
+                const SizedBox(width: 10),
+                // Right details
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    PopupMenuButton<String>(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: Icon(
+                        Icons.more_vert_rounded,
+                        size: 22,
+                        color: isDark
+                            ? const Color(0xFFCBD5E1)
+                            : const Color(0xFF64748B),
+                      ),
+                      onSelected: (v) {
+                        if (v == 'edit') onEdit();
+                        if (v == 'delete') onDelete();
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: 'edit', child: Text("Modifier")),
+                        PopupMenuItem(
+                            value: 'delete', child: Text("Supprimer")),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "${AppFormatters.formatAmount(transaction.amount)} F",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        color: amountColor,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Commission ${AppFormatters.formatAmount(transaction.commission)} F",
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      transaction.category.name,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                    if (transaction.category == TransactionCategory.UV) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        isRetrait
+                            ? "Espèce -${AppFormatters.formatAmount(transaction.amount)} F"
+                            : (isDepot ||
+                                    t == TransactionType.nafama ||
+                                    t == TransactionType.transfertC2c
+                                ? "Espèce +${AppFormatters.formatAmount(transaction.amount)} F"
+                                : (t == TransactionType.transfertUv
+                                    ? "Espèce -${AppFormatters.formatAmount(transaction.amount)} F"
+                                    : "")),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: isRetrait || t == TransactionType.transfertUv
+                              ? const Color(0xFFF87171)
+                              : const Color(0xFF4ADE80),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF94A3B8),
+                      size: 22,
+                    ),
+                  ],
                 ),
               ],
             ),
-            PopupMenuButton<String>(
-              icon: Icon(
-                Icons.more_vert_rounded,
-                size: 18,
-                color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
-              ),
-              onSelected: (v) {
-                if (v == 'edit') onEdit();
-                if (v == 'delete') onDelete();
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'edit', child: Text("Modifier")),
-                PopupMenuItem(value: 'delete', child: Text("Supprimer")),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

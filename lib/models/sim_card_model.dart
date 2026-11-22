@@ -13,6 +13,12 @@ class SimCardModel {
 
   String get displayName => name.trim().isNotEmpty ? name.trim() : "SIM $phone";
 
+  /// Montant total restant sur la carte SIM (UV + Crédit)
+  double get totalBalance => soldeUv + soldeCredit;
+
+  /// Indique si la SIM contient encore des fonds (bloquant la suppression)
+  bool get hasMoney => totalBalance > 0;
+
   SimCardModel copyWith({
     String? phone,
     String? name,

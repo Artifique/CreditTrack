@@ -51,7 +51,8 @@ class CommissionRates {
       nafama: read('nafama', CommissionRates.defaults.nafama),
       forfait: read('forfait', CommissionRates.defaults.forfait),
       sewa: read('sewa', CommissionRates.defaults.sewa),
-      transfertCredit: read('transfert_credit', CommissionRates.defaults.transfertCredit),
+      transfertCredit:
+          read('transfert_credit', CommissionRates.defaults.transfertCredit),
     );
   }
 

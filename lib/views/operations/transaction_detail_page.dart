@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 
+import '../../core/app_formatters.dart';
 import '../../core/app_logger.dart';
 import '../../core/tokens.dart';
 import '../../core/user_feedback.dart';
@@ -34,15 +35,16 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
   bool _isPrintingThermal = false;
   bool _isPrintingSystem = false;
 
-  final _moneyFormat = NumberFormat('#,##0', 'fr_FR');
-
   Future<void> _downloadPdf() async {
     if (_isGeneratingPdf) return;
     setState(() => _isGeneratingPdf = true);
 
     try {
-      final file = await PdfService().generateReceipt(widget.transaction, widget.businessName);
-      await ExportShareService.sharePdf(file, subject: 'Reçu CreditTrack - #${widget.transaction.journalSeq ?? ''}');
+      final file = await PdfService()
+          .generateReceipt(widget.transaction, widget.businessName);
+      await ExportShareService.sharePdf(file,
+          subject:
+              'Reçu CreditTrack - #${widget.transaction.journalSeq ?? ''}');
       if (mounted) {
         UserFeedback.showSuccessToast(context, 'PDF prêt pour le partage');
       }
@@ -61,7 +63,8 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     setState(() => _isPrintingSystem = true);
 
     try {
-      final file = await PdfService().generateReceipt(widget.transaction, widget.businessName);
+      final file = await PdfService()
+          .generateReceipt(widget.transaction, widget.businessName);
       final bytes = await file.readAsBytes();
       await Printing.layoutPdf(onLayout: (_) async => bytes);
     } catch (e, st) {
@@ -79,9 +82,11 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     setState(() => _isPrintingThermal = true);
 
     try {
-      await BluetoothPrinterService().printReceipt(widget.transaction, widget.businessName);
+      await BluetoothPrinterService()
+          .printReceipt(widget.transaction, widget.businessName);
       if (mounted) {
-        UserFeedback.showSuccessToast(context, 'Ticket envoyé à l’imprimante Bluetooth');
+        UserFeedback.showSuccessToast(
+            context, 'Ticket envoyé à l’imprimante Bluetooth');
       }
     } catch (e, st) {
       AppLogger.error('Erreur impression thermique détail', e, st);
@@ -103,11 +108,12 @@ class _TransactionDetailPageState extends State<TransactionDetailPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final tx = widget.transaction;
 
-    final dateFormatted = DateFormat("dd/MM/yyyy 'à' HH:mm").format(tx.createdAt);
-    final amountFormatted = '${_moneyFormat.format(tx.amount)} F';
-    final soldeAvantFormatted = '${_moneyFormat.format(tx.soldeAvant)} F';
-    final soldeApresFormatted = '${_moneyFormat.format(tx.soldeApres)} F';
-    final commissionFormatted = '${_moneyFormat.format(tx.commission)} F';
+    final dateFormatted =
+        DateFormat("dd/MM/yyyy 'à' HH:mm").format(tx.createdAt);
+    final amountFormatted = AppFormatters.formatMoneyShort(tx.amount);
+    final soldeAvantFormatted = AppFormatters.formatMoneyShort(tx.soldeAvant);
+    final soldeApresFormatted = AppFormatters.formatMoneyShort(tx.soldeApres);
+    final commissionFormatted = AppFormatters.formatMoneyShort(tx.commission);
 
     final isDepositOrDebit = [
       TransactionType.depot,

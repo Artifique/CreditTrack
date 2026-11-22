@@ -7,6 +7,7 @@ import '../../controllers/theme_mode_controller.dart';
 import '../../models/business_settings_model.dart';
 import '../../models/profile_model.dart';
 import '../../widgets/profile_avatar.dart';
+import '../../widgets/theme_palette_picker.dart';
 import '../../widgets/ui/ui.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -43,17 +44,21 @@ class _SettingsPageState extends State<SettingsPage> {
               future: _settingsFuture,
               builder: (context, settingsSnapshot) {
                 final profile = profileSnapshot.data;
-                final settings = settingsSnapshot.data ?? BusinessSettingsModel.empty;
+                final settings =
+                    settingsSnapshot.data ?? BusinessSettingsModel.empty;
 
                 return Scaffold(
                   appBar: AppBar(
-                    title: const Text("Paramètres", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+                    title: const Text("Paramètres",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 17)),
                     centerTitle: true,
                   ),
                   body: SingleChildScrollView(
                     child: ResponsiveContainer(
                       maxWidth: 760,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
                       child: Column(
                         children: [
                           FadeInUp(
@@ -71,17 +76,21 @@ class _SettingsPageState extends State<SettingsPage> {
                                   icon: Icons.storefront_rounded,
                                   title: "Profil du commerce",
                                   value: profile?.businessName ?? "-",
-                                  onTap: () => Navigator.pushNamed(context, '/settings-business'),
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/settings-business'),
                                 ),
                                 _SettingsTile(
                                   icon: Icons.sim_card_rounded,
                                   title: "Gestion des cartes SIM",
-                                  value: "${profile?.operationPhones.length ?? 0} SIM(s) configurée(s)",
+                                  value:
+                                      "${profile?.operationPhones.length ?? 0} SIM(s) configurée(s)",
                                   onTap: () async {
-                                    await Navigator.pushNamed(context, '/settings-sims');
+                                    await Navigator.pushNamed(
+                                        context, '/settings-sims');
                                     if (mounted) {
                                       setState(() {
-                                        _profileFuture = _settingsController.getProfile();
+                                        _profileFuture =
+                                            _settingsController.getProfile();
                                       });
                                     }
                                   },
@@ -90,13 +99,15 @@ class _SettingsPageState extends State<SettingsPage> {
                                   icon: Icons.phone_android_rounded,
                                   title: "Téléphone principal",
                                   value: profile?.phoneNumber ?? "-",
-                                  onTap: () => Navigator.pushNamed(context, '/settings-business'),
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/settings-business'),
                                 ),
                                 _SettingsTile(
                                   icon: Icons.percent_rounded,
                                   title: "Taux de commission",
                                   value: "Dépôt, retrait, forfait, UV...",
-                                  onTap: () => Navigator.pushNamed(context, '/settings-commission-rates'),
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/settings-commission-rates'),
                                 ),
                               ],
                             ),
@@ -111,8 +122,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                 _SettingsTile(
                                   icon: Icons.print_rounded,
                                   title: "Imprimante thermique",
-                                  value: settings.autoPrintReceipt ? "Auto activée" : "Manuelle",
-                                  onTap: () => Navigator.pushNamed(context, '/settings-printer'),
+                                  value: settings.autoPrintReceipt
+                                      ? "Auto activée"
+                                      : "Manuelle",
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/settings-printer'),
                                 ),
                               ],
                             ),
@@ -128,12 +142,19 @@ class _SettingsPageState extends State<SettingsPage> {
                                   secondary: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: isDark ? const Color(0x33FBBF24) : AppTokens.primary50,
-                                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                                      color: isDark
+                                          ? const Color(0x33FBBF24)
+                                          : AppTokens.primary50,
+                                      borderRadius: BorderRadius.circular(
+                                          AppTokens.radiusMd),
                                     ),
                                     child: Icon(
-                                      isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                                      color: isDark ? const Color(0xFFFBBF24) : AppTokens.primary500,
+                                      isDark
+                                          ? Icons.light_mode_rounded
+                                          : Icons.dark_mode_rounded,
+                                      color: isDark
+                                          ? const Color(0xFFFBBF24)
+                                          : AppTokens.primary500,
                                       size: 20,
                                     ),
                                   ),
@@ -142,28 +163,36 @@ class _SettingsPageState extends State<SettingsPage> {
                                     style: TextStyle(
                                       fontSize: 14.5,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                                      color: isDark
+                                          ? AppTokens.darkTextPrimary
+                                          : AppTokens.lightTextPrimary,
                                     ),
                                   ),
                                   subtitle: Text(
                                     "Palette sombre reposante pour les yeux",
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                                      color: isDark
+                                          ? AppTokens.darkTextTertiary
+                                          : AppTokens.lightTextTertiary,
                                     ),
                                   ),
                                   value: ThemeModeController.instance.isDark,
                                   activeThumbColor: AppTokens.primary400,
                                   onChanged: (v) async {
-                                    await ThemeModeController.instance.setDarkMode(v);
+                                    await ThemeModeController.instance
+                                        .setDarkMode(v);
                                     try {
-                                      await _settingsController.updateBusinessSettings(
+                                      await _settingsController
+                                          .updateBusinessSettings(
                                         darkMode: v,
                                         language: settings.language,
-                                        autoPrintReceipt: settings.autoPrintReceipt,
+                                        autoPrintReceipt:
+                                            settings.autoPrintReceipt,
                                       );
                                     } catch (_) {
-                                      await ThemeModeController.instance.setDarkMode(!v);
+                                      await ThemeModeController.instance
+                                          .setDarkMode(!v);
                                       if (context.mounted) {
                                         UserFeedback.showToast(
                                           context,
@@ -173,7 +202,38 @@ class _SettingsPageState extends State<SettingsPage> {
                                       }
                                     }
                                   },
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 6),
+                                ),
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.palette_rounded,
+                                        size: 18,
+                                        color: isDark
+                                            ? AppTokens.darkTextSecondary
+                                            : AppTokens.lightTextSecondary,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "Palette de couleurs (5 thèmes)",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark
+                                              ? AppTokens.darkTextSecondary
+                                              : AppTokens.lightTextSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.only(bottom: 8),
+                                  child: ThemePalettePicker(),
                                 ),
                               ],
                             ),
@@ -186,25 +246,42 @@ class _SettingsPageState extends State<SettingsPage> {
                               "Zone de Danger",
                               [
                                 ListTile(
-                                  onTap: () => _confirmClearAllData(context),
+                                  onTap: _confirmClearAllData,
                                   leading: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: isDark ? AppTokens.darkErrorBg : AppTokens.errorBg,
-                                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                                      color: isDark
+                                          ? AppTokens.darkErrorBg
+                                          : AppTokens.errorBg,
+                                      borderRadius: BorderRadius.circular(
+                                          AppTokens.radiusMd),
                                     ),
-                                    child: const Icon(Icons.delete_forever_rounded, color: AppTokens.error, size: 20),
+                                    child: const Icon(
+                                        Icons.delete_forever_rounded,
+                                        color: AppTokens.error,
+                                        size: 20),
                                   ),
                                   title: const Text(
                                     "Effacer toutes les transactions",
-                                    style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: AppTokens.error),
+                                    style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTokens.error),
                                   ),
                                   subtitle: Text(
                                     "Remise à zéro des soldes & historique",
-                                    style: TextStyle(fontSize: 12, color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary),
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? AppTokens.darkTextTertiary
+                                            : AppTokens.lightTextTertiary),
                                   ),
-                                  trailing: const Icon(Icons.chevron_right_rounded, color: AppTokens.error, size: 20),
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                  trailing: const Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: AppTokens.error,
+                                      size: 20),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 6),
                                 ),
                               ],
                             ),
@@ -220,7 +297,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               onPressed: () async {
                                 await _authController.signOut();
                                 if (!context.mounted) return;
-                                Navigator.pushReplacementNamed(context, '/login');
+                                Navigator.pushReplacementNamed(
+                                    context, '/login');
                               },
                             ),
                           ),
@@ -276,14 +354,18 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(AppTokens.radiusPill),
                   ),
                   child: const Text(
                     "Propriétaire Vérifié",
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -294,7 +376,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSettingsSection(BuildContext context, String title, List<Widget> tiles) {
+  Widget _buildSettingsSection(
+      BuildContext context, String title, List<Widget> tiles) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
@@ -307,7 +390,9 @@ class _SettingsPageState extends State<SettingsPage> {
             style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w700,
-              color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+              color: isDark
+                  ? AppTokens.darkTextSecondary
+                  : AppTokens.lightTextSecondary,
               letterSpacing: 0.2,
             ),
           ),
@@ -329,7 +414,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         height: 1,
                         thickness: 1,
                         indent: 56,
-                        color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder,
+                        color: isDark
+                            ? AppTokens.darkBorder
+                            : AppTokens.lightBorder,
                       ),
                   ],
                 );
@@ -341,7 +428,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _confirmClearAllData(BuildContext context) async {
+  Future<void> _confirmClearAllData() async {
     final confirmCtrl = TextEditingController();
     final ok = await showDialog<bool>(
           context: context,
@@ -349,7 +436,8 @@ class _SettingsPageState extends State<SettingsPage> {
             builder: (dialogContext, setDialogState) {
               final isMatch = confirmCtrl.text.trim() == 'SUPPRIMER';
               return AlertDialog(
-                title: const Text("Effacer toutes les données", style: TextStyle(fontWeight: FontWeight.w700)),
+                title: const Text("Effacer toutes les données",
+                    style: TextStyle(fontWeight: FontWeight.w700)),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,7 +448,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       style: TextStyle(fontSize: 13.5, height: 1.45),
                     ),
                     const SizedBox(height: 16),
-                    const Text("Tapez SUPPRIMER pour confirmer :", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    const Text("Tapez SUPPRIMER pour confirmer :",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 13)),
                     const SizedBox(height: 8),
                     AppInput(
                       controller: confirmCtrl,
@@ -378,7 +468,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     label: "Effacer tout",
                     variant: AppButtonVariant.danger,
                     size: AppButtonSize.sm,
-                    onPressed: isMatch ? () => Navigator.pop(dialogContext, true) : null,
+                    onPressed: isMatch
+                        ? () => Navigator.pop(dialogContext, true)
+                        : null,
                   ),
                 ],
               );
@@ -393,7 +485,8 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       await _settingsController.clearAllData();
       if (!mounted) return;
-      UserFeedback.showSuccessToast(context, "Toutes les données ont été effacées.");
+      UserFeedback.showSuccessToast(
+          context, "Toutes les données ont été effacées.");
       if (!mounted) return;
       setState(() {
         _profileFuture = _settingsController.getProfile();
@@ -431,14 +524,17 @@ class _SettingsTile extends StatelessWidget {
           color: isDark ? const Color(0x336366F1) : AppTokens.primary50,
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
         ),
-        child: Icon(icon, color: isDark ? AppTokens.primary300 : AppTokens.primary500, size: 20),
+        child: Icon(icon,
+            color: isDark ? AppTokens.primary300 : AppTokens.primary500,
+            size: 20),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 14.5,
           fontWeight: FontWeight.w600,
-          color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+          color:
+              isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
         ),
       ),
       trailing: Row(
@@ -449,7 +545,9 @@ class _SettingsTile extends StatelessWidget {
             child: Text(
               value,
               style: TextStyle(
-                color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextSecondary,
+                color: isDark
+                    ? AppTokens.darkTextTertiary
+                    : AppTokens.lightTextSecondary,
                 fontSize: 12.5,
               ),
               overflow: TextOverflow.ellipsis,
@@ -459,7 +557,9 @@ class _SettingsTile extends StatelessWidget {
           Icon(
             Icons.chevron_right_rounded,
             size: 18,
-            color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+            color: isDark
+                ? AppTokens.darkTextTertiary
+                : AppTokens.lightTextTertiary,
           ),
         ],
       ),

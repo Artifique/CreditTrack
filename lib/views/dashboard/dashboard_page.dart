@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_formatters.dart';
 import '../../core/tokens.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/settings_controller.dart';
@@ -79,11 +80,14 @@ class _DashboardPageState extends State<DashboardPage> {
           builder: (context, _) {
             return StreamBuilder<List<TransactionModel>>(
               stream: _transactionController.watchTransactions(
-                merchantPhone: OperationPhoneController.instance.selectedForFilter,
+                merchantPhone:
+                    OperationPhoneController.instance.selectedForFilter,
               ),
               builder: (context, txSnapshot) {
                 final transactions = txSnapshot.data ?? [];
-                final txSig = transactions.map((e) => '${e.id}_${e.amount}_${e.merchantPhone}').join('|');
+                final txSig = transactions
+                    .map((e) => '${e.id}_${e.amount}_${e.merchantPhone}')
+                    .join('|');
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (!mounted || txSig == _lastTxSigForWallet) return;
                   _lastTxSigForWallet = txSig;
@@ -91,7 +95,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 });
 
                 final sel = OperationPhoneController.instance.selectedForFilter;
-                final lowUv = sel != null && _wallet.soldeUv > 0 && _wallet.soldeUv < 10000;
+                final lowUv = sel != null &&
+                    _wallet.soldeUv > 0 &&
+                    _wallet.soldeUv < 10000;
 
                 return Scaffold(
                   body: CustomScrollView(
@@ -100,7 +106,8 @@ class _DashboardPageState extends State<DashboardPage> {
                       SliverToBoxAdapter(
                         child: ResponsiveContainer(
                           maxWidth: 1080,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -114,7 +121,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                   'Sélectionne un numéro de transfert pour utiliser « Transférer profit UV ».',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                                    color: isDark
+                                        ? AppTokens.darkTextSecondary
+                                        : AppTokens.lightTextSecondary,
                                   ),
                                 ),
                               ],
@@ -124,16 +133,22 @@ class _DashboardPageState extends State<DashboardPage> {
                                   child: Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: isDark ? AppTokens.darkWarningBg : AppTokens.warningBg,
-                                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                                      color: isDark
+                                          ? AppTokens.darkWarningBg
+                                          : AppTokens.warningBg,
+                                      borderRadius: BorderRadius.circular(
+                                          AppTokens.radiusMd),
                                       border: Border.all(
-                                        color: isDark ? const Color(0x66F59E0B) : const Color(0xFFFDE68A),
+                                        color: isDark
+                                            ? const Color(0x66F59E0B)
+                                            : const Color(0xFFFDE68A),
                                         width: 1.2,
                                       ),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.warning_amber_rounded, color: AppTokens.warning, size: 22),
+                                        const Icon(Icons.warning_amber_rounded,
+                                            color: AppTokens.warning, size: 22),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
@@ -141,7 +156,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                             style: TextStyle(
                                               fontSize: 12.5,
                                               fontWeight: FontWeight.w500,
-                                              color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                                              color: isDark
+                                                  ? AppTokens.darkTextPrimary
+                                                  : AppTokens.lightTextPrimary,
                                             ),
                                           ),
                                         ),
@@ -158,7 +175,8 @@ class _DashboardPageState extends State<DashboardPage> {
                               if (sel != null && _wallet.profitUv > 0) ...[
                                 const SizedBox(height: AppTokens.space16),
                                 AppButton(
-                                  label: 'Transférer profit UV (${_formatAmount(_wallet.profitUv)} CFA)',
+                                  label:
+                                      'Transférer profit UV (${_formatAmount(_wallet.profitUv)} CFA)',
                                   icon: Icons.savings_outlined,
                                   variant: AppButtonVariant.secondary,
                                   isFullWidth: true,
@@ -168,8 +186,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                       context,
                                       '/new-transaction',
                                       arguments: NewTransactionRouteArgs(
-                                        initialType: TransactionType.transfertProfitUv,
-                                        suggestedProfitUvAmount: _wallet.profitUv,
+                                        initialType:
+                                            TransactionType.transfertProfitUv,
+                                        suggestedProfitUvAmount:
+                                            _wallet.profitUv,
                                       ),
                                     );
                                   },
@@ -180,19 +200,24 @@ class _DashboardPageState extends State<DashboardPage> {
                                 delay: const Duration(milliseconds: 150),
                                 child: AppCard(
                                   variant: AppCardVariant.elevated,
-                                  padding: const EdgeInsets.all(AppTokens.space20),
+                                  padding:
+                                      const EdgeInsets.all(AppTokens.space20),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             "Activité des 7 derniers jours",
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w700,
-                                              color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                                              color: isDark
+                                                  ? AppTokens.darkTextPrimary
+                                                  : AppTokens.lightTextPrimary,
                                             ),
                                           ),
                                           const AppBadge(
@@ -217,14 +242,19 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                               const SizedBox(height: AppTokens.space32),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  _buildSectionTitle(context, "Transactions Récentes"),
+                                  _buildSectionTitle(
+                                      context, "Transactions Récentes"),
                                   InkWell(
-                                    onTap: () => Navigator.pushNamed(context, '/history'),
-                                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                                    onTap: () => Navigator.pushNamed(
+                                        context, '/history'),
+                                    borderRadius: BorderRadius.circular(
+                                        AppTokens.radiusSm),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       child: Row(
                                         children: [
                                           Text(
@@ -232,14 +262,18 @@ class _DashboardPageState extends State<DashboardPage> {
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w600,
-                                              color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                                              color: isDark
+                                                  ? AppTokens.primary300
+                                                  : AppTokens.primary600,
                                             ),
                                           ),
                                           const SizedBox(width: 4),
                                           Icon(
                                             Icons.arrow_forward_rounded,
                                             size: 14,
-                                            color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                                            color: isDark
+                                                ? AppTokens.primary300
+                                                : AppTokens.primary600,
                                           ),
                                         ],
                                       ),
@@ -257,7 +291,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                   isDark,
                                 ),
                               ),
-                              const SizedBox(height: 80), // Padding for bottom bar
+                              const SizedBox(
+                                  height: 80), // Padding for bottom bar
                             ],
                           ),
                         ),
@@ -266,13 +301,16 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   bottomNavigationBar: _buildBottomNav(context, isDark),
                   floatingActionButton: FloatingActionButton(
-                    onPressed: () => Navigator.pushNamed(context, '/new-transaction'),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/new-transaction'),
                     backgroundColor: AppTokens.primary500,
                     elevation: 4,
                     shape: const CircleBorder(),
-                    child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+                    child: const Icon(Icons.add_rounded,
+                        color: Colors.white, size: 30),
                   ),
-                  floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+                  floatingActionButtonLocation:
+                      FloatingActionButtonLocation.centerDocked,
                 );
               },
             );
@@ -304,7 +342,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                    color: isDark
+                        ? AppTokens.darkTextSecondary
+                        : AppTokens.lightTextSecondary,
                   ),
                 ),
                 Text(
@@ -313,7 +353,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
-                    color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                    color: isDark
+                        ? AppTokens.darkTextPrimary
+                        : AppTokens.lightTextPrimary,
                   ),
                 ),
               ],
@@ -324,13 +366,20 @@ class _DashboardPageState extends State<DashboardPage> {
                 // Theme Mode Switch button
                 IconButton(
                   icon: Icon(
-                    ThemeModeController.instance.isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                    ThemeModeController.instance.isDark
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
                     size: 20,
-                    color: isDark ? const Color(0xFFFBBF24) : AppTokens.lightTextSecondary,
+                    color: isDark
+                        ? const Color(0xFFFBBF24)
+                        : AppTokens.lightTextSecondary,
                   ),
-                  tooltip: ThemeModeController.instance.isDark ? "Mode clair" : "Mode sombre",
+                  tooltip: ThemeModeController.instance.isDark
+                      ? "Mode clair"
+                      : "Mode sombre",
                   onPressed: () {
-                    ThemeModeController.instance.setDarkMode(!ThemeModeController.instance.isDark);
+                    ThemeModeController.instance
+                        .setDarkMode(!ThemeModeController.instance.isDark);
                   },
                 ),
                 const SizedBox(width: 4),
@@ -347,52 +396,51 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBalanceCards(OperationPhoneWalletModel w) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: [
-          _BalanceCard(
-            title: 'Solde UV',
-            amount: _formatAmount(w.soldeUv),
-            gradient: AppTokens.cardGradientUV,
-            icon: Icons.account_balance_wallet_rounded,
-            tag: "Transferts",
+    return ListenableBuilder(
+      listenable: ThemeModeController.instance,
+      builder: (context, _) {
+        final palette = ThemeModeController.instance.activePalette;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: [
+              _BalanceCard(
+                title: 'Solde UV',
+                amount: _formatAmount(w.soldeUv),
+                gradient: palette.cardGradientUV,
+                icon: Icons.account_balance_wallet_rounded,
+                tag: "Transferts",
+              ),
+              const SizedBox(width: 14),
+              _BalanceCard(
+                title: 'Solde Crédit',
+                amount: _formatAmount(w.soldeCredit),
+                gradient: palette.cardGradientCredit,
+                icon: Icons.phone_android_rounded,
+                tag: "Recharges",
+              ),
+              const SizedBox(width: 14),
+              _BalanceCard(
+                title: 'Bénéfice UV',
+                amount: _formatAmount(w.profitUv),
+                gradient: palette.cardGradientProfitUV,
+                icon: Icons.trending_up_rounded,
+                tag: "Commissions",
+              ),
+              const SizedBox(width: 14),
+              _BalanceCard(
+                title: 'Bénéfice Crédit',
+                amount: _formatAmount(w.profitCredit),
+                gradient: palette.cardGradientProfitCredit,
+                icon: Icons.stacked_line_chart_rounded,
+                tag: "Commissions",
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          _BalanceCard(
-            title: 'Solde Crédit',
-            amount: _formatAmount(w.soldeCredit),
-            gradient: AppTokens.cardGradientCredit,
-            icon: Icons.phone_android_rounded,
-            tag: "Recharges",
-          ),
-          const SizedBox(width: 14),
-          _BalanceCard(
-            title: 'Bénéfice UV',
-            amount: _formatAmount(w.profitUv),
-            gradient: const LinearGradient(
-              colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            icon: Icons.trending_up_rounded,
-            tag: "Commissions",
-          ),
-          const SizedBox(width: 14),
-          _BalanceCard(
-            title: 'Bénéfice Crédit',
-            amount: _formatAmount(w.profitCredit),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF7C2D12), AppTokens.primary500],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            icon: Icons.stacked_line_chart_rounded,
-            tag: "Commissions",
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -420,7 +468,8 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: () => Navigator.pushNamed(
               context,
               '/new-transaction',
-              arguments: const NewTransactionRouteArgs(initialType: TransactionType.depot),
+              arguments: const NewTransactionRouteArgs(
+                  initialType: TransactionType.depot),
             ),
           ),
         ),
@@ -433,7 +482,8 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: () => Navigator.pushNamed(
               context,
               '/new-transaction',
-              arguments: const NewTransactionRouteArgs(initialType: TransactionType.retrait),
+              arguments: const NewTransactionRouteArgs(
+                  initialType: TransactionType.retrait),
             ),
           ),
         ),
@@ -446,7 +496,8 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: () => Navigator.pushNamed(
               context,
               '/new-transaction',
-              arguments: const NewTransactionRouteArgs(initialType: TransactionType.transfertUv),
+              arguments: const NewTransactionRouteArgs(
+                  initialType: TransactionType.transfertUv),
             ),
           ),
         ),
@@ -459,7 +510,8 @@ class _DashboardPageState extends State<DashboardPage> {
             onTap: () => Navigator.pushNamed(
               context,
               '/new-transaction',
-              arguments: const NewTransactionRouteArgs(initialType: TransactionType.achat),
+              arguments: const NewTransactionRouteArgs(
+                  initialType: TransactionType.achat),
             ),
           ),
         ),
@@ -483,13 +535,16 @@ class _DashboardPageState extends State<DashboardPage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle,
+                  color:
+                      isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.receipt_long_outlined,
                   size: 36,
-                  color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                  color: isDark
+                      ? AppTokens.darkTextTertiary
+                      : AppTokens.lightTextTertiary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -498,7 +553,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                  color: isDark
+                      ? AppTokens.darkTextSecondary
+                      : AppTokens.lightTextSecondary,
                 ),
               ),
               const SizedBox(height: 6),
@@ -506,7 +563,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 "Vos prochaines opérations s'afficheront ici en direct.",
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                  color: isDark
+                      ? AppTokens.darkTextTertiary
+                      : AppTokens.lightTextTertiary,
                 ),
               ),
             ],
@@ -515,7 +574,8 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
 
-    final sorted = [...transactions]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final sorted = [...transactions]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final recent = sorted.take(4).toList();
 
     return Column(
@@ -562,7 +622,8 @@ class _DashboardPageState extends State<DashboardPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute<void>(
-                  builder: (_) => TransactionDetailPage(transaction: tx, businessName: businessName),
+                  builder: (_) => TransactionDetailPage(
+                      transaction: tx, businessName: businessName),
                 ),
               );
             },
@@ -586,11 +647,15 @@ class _DashboardPageState extends State<DashboardPage> {
                         children: [
                           Flexible(
                             child: Text(
-                              tx.clientName.isNotEmpty ? tx.clientName : "Client direct",
+                              tx.clientName.isNotEmpty
+                                  ? tx.clientName
+                                  : "Client direct",
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
-                                color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                                color: isDark
+                                    ? AppTokens.darkTextPrimary
+                                    : AppTokens.lightTextPrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -608,7 +673,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         "${tx.clientPhone.isNotEmpty ? '${tx.clientPhone} • ' : ''}$dateFormatted",
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                          color: isDark
+                              ? AppTokens.darkTextTertiary
+                              : AppTokens.lightTextTertiary,
                         ),
                       ),
                     ],
@@ -630,7 +697,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     Icon(
                       Icons.chevron_right_rounded,
                       size: 16,
-                      color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                      color: isDark
+                          ? AppTokens.darkTextTertiary
+                          : AppTokens.lightTextTertiary,
                     ),
                   ],
                 ),
@@ -642,7 +711,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  String _formatAmount(double amount) => NumberFormat('#,##0', 'fr_FR').format(amount);
+  String _formatAmount(double amount) => AppFormatters.formatAmount(amount);
 
   Widget _buildBottomNav(BuildContext context, bool isDark) {
     return BottomAppBar(
@@ -790,7 +859,8 @@ class _BalanceCardState extends State<_BalanceCard> {
                     child: Icon(widget.icon, color: Colors.white, size: 20),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(AppTokens.radiusPill),
@@ -903,7 +973,9 @@ class _QuickActionButtonState extends State<_QuickActionButton> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                    color: isDark
+                        ? AppTokens.darkTextPrimary
+                        : AppTokens.lightTextPrimary,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
@@ -917,5 +989,3 @@ class _QuickActionButtonState extends State<_QuickActionButton> {
     );
   }
 }
-
-

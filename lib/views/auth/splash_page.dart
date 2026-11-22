@@ -11,7 +11,8 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
   late Animation<double> _scaleAnim;
@@ -19,9 +20,12 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(vsync: this, duration: const Duration(seconds: 2));
-    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeIn));
-    _scaleAnim = Tween<double>(begin: 0.8, end: 1).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutBack));
+    _animCtrl =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _fadeAnim = Tween<double>(begin: 0, end: 1)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeIn));
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1)
+        .animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOutBack));
 
     _animCtrl.forward();
 
@@ -110,11 +114,13 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                    color: isDark
+                        ? AppTokens.darkTextSecondary
+                        : AppTokens.lightTextSecondary,
                   ),
                 ),
                 const SizedBox(height: 48),
-                const CircularProgressIndicator(
+                CircularProgressIndicator(
                   color: AppTokens.primary500,
                   strokeWidth: 3,
                 ),

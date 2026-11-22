@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../controllers/cash_balance_controller.dart';
 import '../../controllers/operation_phone_controller.dart';
 import '../../controllers/settings_controller.dart';
 import '../../controllers/sim_card_controller.dart';
+import '../../controllers/theme_mode_controller.dart';
 import '../../controllers/transaction_controller.dart';
+import '../../core/app_formatters.dart';
 import '../../core/app_logger.dart';
 import '../../core/tokens.dart';
 import '../../core/user_feedback.dart';
@@ -14,6 +16,7 @@ import '../../models/new_transaction_route_args.dart';
 import '../../models/operation_phone_wallet_model.dart';
 import '../../models/sim_card_model.dart';
 import '../../models/transaction_model.dart';
+import '../../widgets/ui/app_button.dart';
 import '../../widgets/ui/app_toast.dart';
 import '../../widgets/ui/responsive_layout.dart';
 import 'widgets/operation_amount_input_card.dart';
@@ -58,6 +61,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _showOmBalance = true;
   bool _showCreditBalance = true;
+  bool _showCashBalance = true;
   OperationPhoneWalletModel _wallet = OperationPhoneWalletModel.empty;
 
   CommissionRates _commissionRates = CommissionRates.defaults;
@@ -94,7 +98,9 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       }
     });
 
-    _transactionController.getRecentClientHistorySuggestions().then((suggestions) {
+    _transactionController
+        .getRecentClientHistorySuggestions()
+        .then((suggestions) {
       if (mounted) {
         setState(() => _historySuggestions = suggestions);
       }
@@ -155,7 +161,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     super.dispose();
   }
 
-  double get _omBalance => _selectedSim != null ? _selectedSim!.soldeUv : _wallet.soldeUv;
+  double get _omBalance =>
+      _selectedSim != null ? _selectedSim!.soldeUv : _wallet.soldeUv;
   double get _creditBalance => _selectedSim != null
       ? _selectedSim!.soldeCredit
       : (_wallet.profitUv > 0 ? _wallet.profitUv : 124500.0);
@@ -168,7 +175,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     }
     final raw = _amountController.text.trim().replaceAll(' ', '');
     final amount = double.tryParse(raw) ?? 0.0;
-    final com = TransactionModel.calculateCommission(_selectedType!, amount, rates: _commissionRates);
+    final com = TransactionModel.calculateCommission(_selectedType!, amount,
+        rates: _commissionRates);
     _amountNotifier.value = amount;
     _commissionNotifier.value = com;
   }
@@ -180,14 +188,19 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     return double.tryParse(raw) ?? 0.0;
   }
 
-  bool get _isProfitTransfer => _selectedType == TransactionType.transfertProfitUv;
+  bool get _isProfitTransfer =>
+      _selectedType == TransactionType.transfertProfitUv;
 
   double get _currentSimBalance {
-    if (_selectedSim == null) return _selectedCategory == 'CREDIT' ? _wallet.profitUv : _wallet.soldeUv;
-    return _selectedCategory == 'CREDIT' ? _selectedSim!.soldeCredit : _selectedSim!.soldeUv;
+    if (_selectedSim == null) {
+      return _selectedCategory == 'CREDIT' ? _wallet.profitUv : _wallet.soldeUv;
+    }
+    return _selectedCategory == 'CREDIT'
+        ? _selectedSim!.soldeCredit
+        : _selectedSim!.soldeUv;
   }
 
-  String _formatAmount(double amount) => NumberFormat('#,##0', 'fr_FR').format(amount);
+  String _formatAmount(double amount) => AppFormatters.formatAmount(amount);
 
   void _onSelectOperation(TransactionType type) {
     final isCredit = _creditTypes.contains(type);
@@ -200,14 +213,17 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   void _showCustomizeModal() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setMState) => OperationCustomizeSheet(
           showOmBalance: _showOmBalance,
           showCreditBalance: _showCreditBalance,
+          showCashBalance: _showCashBalance,
           onToggleOm: (v) {
             setMState(() => _showOmBalance = v);
             setState(() => _showOmBalance = v);
@@ -215,6 +231,10 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           onToggleCredit: (v) {
             setMState(() => _showCreditBalance = v);
             setState(() => _showCreditBalance = v);
+          },
+          onToggleCash: (v) {
+            setMState(() => _showCashBalance = v);
+            setState(() => _showCashBalance = v);
           },
           onManageSims: () {
             Navigator.pop(ctx);
@@ -226,17 +246,298 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   void _showNotificationsSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => const OperationNotificationsSheet(),
     );
   }
 
+  Future<void> _showCashDrawerModal(BuildContext context) async {
+    final cashCtrl = CashBalanceController.instance;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          return Container(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              20,
+              24,
+              MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.payments_rounded,
+                        color: Color(0xFF10B981),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Solde Espèce – Caisse Universelle",
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? AppTokens.darkTextPrimary
+                                  : AppTokens.lightTextPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            "Commun à toutes les SIM • Équilibre temps réel",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: ThemeModeController
+                        .instance.activePalette.cardGradientCash,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Espèces disponibles en caisse",
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "${AppFormatters.formatAmount(cashCtrl.soldeEspece)} CFA",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Fond de caisse initial :",
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFF94A3B8)),
+                          ),
+                          Text(
+                            "${AppFormatters.formatAmount(cashCtrl.initialCash)} CFA",
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? AppTokens.darkTextPrimary
+                                  : AppTokens.lightTextPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Flux net des opérations UV :",
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFF94A3B8)),
+                          ),
+                          Text(
+                            "${cashCtrl.transactionsNetCash >= 0 ? '+' : ''}${AppFormatters.formatAmount(cashCtrl.transactionsNetCash)} CFA",
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: cashCtrl.transactionsNetCash >= 0
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFFEF4444),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  "ℹ️ Règle d'or : Lorsque votre solde UV diminue (Dépôt), votre solde Espèce augmente du même montant. Lorsque votre solde UV augmente (Retrait), votre solde Espèce diminue du même montant.",
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 1.4,
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: "Modifier fond initial",
+                        variant: AppButtonVariant.secondary,
+                        icon: Icons.edit_rounded,
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await _openEditInitialCashDialog(context);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AppButton(
+                        label: "Fermer",
+                        variant: AppButtonVariant.primary,
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openEditInitialCashDialog(BuildContext context) async {
+    final cashCtrl = CashBalanceController.instance;
+    final ctrl = TextEditingController(
+      text: cashCtrl.initialCash.toStringAsFixed(0),
+    );
+
+    final newAmount = await showDialog<double>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text("Fond de caisse initial"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Définissez le montant en espèces physiquement disponible dans votre tiroir-caisse au début :",
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: ctrl,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: "Montant Espèces (CFA)",
+                hintText: "Ex: 200000",
+                suffixText: "CFA",
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text("Annuler"),
+          ),
+          AppButton(
+            label: "Enregistrer",
+            size: AppButtonSize.sm,
+            onPressed: () {
+              final val = double.tryParse(ctrl.text.trim()) ?? 0;
+              Navigator.pop(dialogCtx, val);
+            },
+          ),
+        ],
+      ),
+    );
+
+    if (newAmount != null) {
+      await cashCtrl.setInitialCash(newAmount);
+      if (context.mounted) {
+        UserFeedback.showSuccessToast(
+          context,
+          "Fond de caisse mis à jour : ${AppFormatters.formatAmount(newAmount)} CFA",
+        );
+      }
+    }
+  }
+
   void _validateFormBeforeConfirm() {
     if (_enteredAmount <= 0) {
-      UserFeedback.showToast(context, 'Veuillez saisir un montant supérieur à 0.', type: AppToastType.warning);
+      UserFeedback.showToast(
+          context, 'Veuillez saisir un montant supérieur à 0.',
+          type: AppToastType.warning);
       return;
     }
 
@@ -244,7 +545,26 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       final phone = _clientPhoneController.text.trim();
       final digits = phone.replaceAll(RegExp(r'\D'), '');
       if (digits.length < 8) {
-        UserFeedback.showToast(context, 'Le numéro client doit comporter au moins 8 chiffres.', type: AppToastType.warning);
+        UserFeedback.showToast(
+            context, 'Le numéro client doit comporter au moins 8 chiffres.',
+            type: AppToastType.warning);
+        return;
+      }
+    }
+
+    // Protection du solde Espèce universel
+    final isCashOutOperation = _selectedCategory == 'UV' &&
+        (_selectedType == TransactionType.retrait ||
+            _selectedType == TransactionType.transfertUv);
+
+    if (isCashOutOperation) {
+      final cashAvailable = CashBalanceController.instance.soldeEspece;
+      if (_enteredAmount > cashAvailable) {
+        UserFeedback.showToast(
+          context,
+          'Solde Espèce insuffisant',
+          type: AppToastType.error,
+        );
         return;
       }
     }
@@ -257,8 +577,12 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     final activePhone = _selectedSim?.phone ??
         OperationPhoneController.instance.selectedForFilter ??
         OperationPhoneController.instance.registeredPhones.firstOrNull;
-    final phone = _isProfitTransfer ? (activePhone ?? 'Interne') : _clientPhoneController.text.trim();
-    final name = _clientNameController.text.trim().isNotEmpty ? _clientNameController.text.trim() : 'Client direct';
+    final phone = _isProfitTransfer
+        ? (activePhone ?? 'Interne')
+        : _clientPhoneController.text.trim();
+    final name = _clientNameController.text.trim().isNotEmpty
+        ? _clientNameController.text.trim()
+        : 'Client direct';
 
     showDialog<void>(
       context: context,
@@ -289,7 +613,9 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       Navigator.pop(dialogCtx);
-      UserFeedback.showToast(context, 'Session expirée. Veuillez vous reconnecter.', type: AppToastType.error);
+      UserFeedback.showToast(
+          context, 'Session expirée. Veuillez vous reconnecter.',
+          type: AppToastType.error);
       return;
     }
 
@@ -297,13 +623,19 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
     final activePhone = _selectedSim?.phone ??
         OperationPhoneController.instance.selectedForFilter ??
         OperationPhoneController.instance.registeredPhones.firstOrNull;
-    final phone = _isProfitTransfer ? (activePhone ?? 'Interne') : _clientPhoneController.text.trim();
-    final name = _clientNameController.text.trim().isNotEmpty ? _clientNameController.text.trim() : 'Client direct';
+    final phone = _isProfitTransfer
+        ? (activePhone ?? 'Interne')
+        : _clientPhoneController.text.trim();
+    final name = _clientNameController.text.trim().isNotEmpty
+        ? _clientNameController.text.trim()
+        : 'Client direct';
 
     final tx = TransactionModel(
       userId: userId,
       type: _selectedType!,
-      category: _selectedCategory == 'CREDIT' ? TransactionCategory.CREDIT : TransactionCategory.UV,
+      category: _selectedCategory == 'CREDIT'
+          ? TransactionCategory.CREDIT
+          : TransactionCategory.UV,
       clientName: name,
       clientPhone: phone,
       merchantPhone: activePhone,
@@ -313,13 +645,25 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       createdAt: DateTime.now(),
     );
 
+    // Vérification de sécurité Caisse Espèce
+    final cashDelta = CashBalanceController.getCashDeltaForTransaction(tx);
+    if (cashDelta < 0 && amount > CashBalanceController.instance.soldeEspece) {
+      if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+      setState(() => _isSubmitting = false);
+      UserFeedback.showToast(context, 'Solde Espèce insuffisant',
+          type: AppToastType.error);
+      return;
+    }
+
     try {
       final savedTx = await _transactionController.addTransaction(tx);
       await SimCardController.instance.loadSimCards();
 
-      if (!mounted) return;
-      Navigator.pop(dialogCtx);
+      if (dialogCtx.mounted) {
+        Navigator.pop(dialogCtx);
+      }
 
+      if (!mounted) return;
       setState(() {
         _completedTransaction = savedTx;
         _currentStep = 3;
@@ -327,9 +671,11 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
       });
     } catch (e, st) {
       AppLogger.error('Erreur exécution transaction', e, st);
+      if (dialogCtx.mounted) {
+        Navigator.pop(dialogCtx);
+      }
       if (mounted) {
         setState(() => _isSubmitting = false);
-        Navigator.pop(dialogCtx);
         await UserFeedback.showErrorModal(context, e);
       }
     }
@@ -358,19 +704,59 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: _currentStep == 1
-            ? IconButton(
-                icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : Colors.black87, size: 26),
-                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                tooltip: 'Menu',
-              )
-            : IconButton(
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: isDark ? Colors.white : const Color(0xFF1E293B),
-                  size: 24,
+            ? Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.menu_rounded,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      size: 20,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                    tooltip: 'Menu',
+                  ),
                 ),
-                onPressed: () => setState(() => _currentStep = 1),
-                tooltip: 'Retour aux opérations',
+              )
+            : Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : const Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFE2E8F0),
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: isDark ? Colors.white : const Color(0xFF1E293B),
+                      size: 20,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => setState(() => _currentStep = 1),
+                    tooltip: 'Retour aux opérations',
+                  ),
+                ),
               ),
         title: Text(
           _currentStep == 3 ? 'Opération Réussie' : 'Nouvelle Opération',
@@ -384,29 +770,51 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         centerTitle: true,
         actions: [
           if (_currentStep == 1) ...[
-            IconButton(
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(Icons.notifications_none_rounded, color: isDark ? Colors.white : Colors.black87, size: 24),
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppTokens.primary500,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF1E293B)
+                      : const Color(0xFFF1F5F9),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
+                    width: 1,
                   ),
-                ],
+                ),
+                child: IconButton(
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        Icons.notifications_none_rounded,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        size: 20,
+                      ),
+                      Positioned(
+                        top: -1,
+                        right: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: AppTokens.primary500,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  padding: EdgeInsets.zero,
+                  onPressed: _showNotificationsSheet,
+                  tooltip: 'Notifications',
+                ),
               ),
-              onPressed: _showNotificationsSheet,
-              tooltip: 'Notifications',
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 12),
           ],
         ],
       ),
@@ -477,29 +885,54 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           children: [
             const OperationBannersCarousel(),
             const SizedBox(height: 18),
-            OperationBalanceCard(
-              title: 'Solde Orange Money',
-              amount: _omBalance,
-              isVisible: _showOmBalance,
-              onToggleVisibility: () => setState(() => _showOmBalance = !_showOmBalance),
-              logo: const OrangeMoneyLogo(size: 38),
-            ),
-            const SizedBox(height: 10),
-            OperationBalanceCard(
-              title: 'Solde Crédit',
-              amount: _creditBalance,
-              isVisible: _showCreditBalance,
-              onToggleVisibility: () => setState(() => _showCreditBalance = !_showCreditBalance),
-              logo: const CreditBalanceLogo(size: 38),
-            ),
+            if (_showOmBalance) ...[
+              OperationBalanceCard(
+                title: 'Solde Orange Money',
+                amount: _omBalance,
+                isVisible: _showOmBalance,
+                onToggleVisibility: () =>
+                    setState(() => _showOmBalance = !_showOmBalance),
+                logo: const OrangeMoneyLogo(size: 38),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (_showCreditBalance) ...[
+              OperationBalanceCard(
+                title: 'Solde Crédit',
+                amount: _creditBalance,
+                isVisible: _showCreditBalance,
+                onToggleVisibility: () =>
+                    setState(() => _showCreditBalance = !_showCreditBalance),
+                logo: const CreditBalanceLogo(size: 38),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (_showCashBalance) ...[
+              ListenableBuilder(
+                listenable: CashBalanceController.instance,
+                builder: (context, _) {
+                  return OperationBalanceCard(
+                    title: 'Solde Espèce',
+                    amount: CashBalanceController.instance.soldeEspece,
+                    isVisible: _showCashBalance,
+                    onToggleVisibility: () =>
+                        setState(() => _showCashBalance = !_showCashBalance),
+                    logo: const CashBalanceLogo(size: 38),
+                    onTap: () => _showCashDrawerModal(context),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
             const SizedBox(height: 6),
             Align(
               alignment: Alignment.centerRight,
               child: InkWell(
                 onTap: _showCustomizeModal,
                 borderRadius: BorderRadius.circular(4),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -511,8 +944,9 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                           fontSize: 13,
                         ),
                       ),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_rounded, color: AppTokens.primary500, size: 15),
+                      const SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_rounded,
+                          color: AppTokens.primary500, size: 15),
                     ],
                   ),
                 ),
@@ -521,7 +955,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             const SizedBox(height: 16),
             OperationCategoryTabs(
               selectedCategory: _selectedCategory,
-              onSelectCategory: (cat) => setState(() => _selectedCategory = cat),
+              onSelectCategory: (cat) =>
+                  setState(() => _selectedCategory = cat),
               isDark: isDark,
             ),
             const SizedBox(height: 16),
@@ -537,7 +972,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
   }
 
   Widget _buildStepTwoForm(bool isDark) {
-    const primaryColor = AppTokens.primary500;
+    final primaryColor = AppTokens.primary500;
 
     return RepaintBoundary(
       child: SingleChildScrollView(
@@ -553,8 +988,10 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                 isDark: isDark,
                 onSelectedSuggestion: (suggestion) {
                   _clientNameController.text = suggestion.clientName;
-                  if (_amountController.text.isEmpty && suggestion.lastAmount > 0) {
-                    _amountController.text = suggestion.lastAmount.round().toString();
+                  if (_amountController.text.isEmpty &&
+                      suggestion.lastAmount > 0) {
+                    _amountController.text =
+                        suggestion.lastAmount.round().toString();
                     _calculateCommission();
                   }
                 },
@@ -574,7 +1011,8 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
             Text(
               'Montants rapides',
               style: TextStyle(
-                color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                color:
+                    isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
                 fontSize: 14.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
@@ -615,13 +1053,15 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shadowColor: primaryColor.withValues(alpha: 0.35),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2.5),
                       )
                     : const Text(
                         'Valider l\'Opération',

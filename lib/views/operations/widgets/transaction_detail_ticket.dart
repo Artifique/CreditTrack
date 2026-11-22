@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/app_formatters.dart';
 import '../../../core/tokens.dart';
 import '../../../models/transaction_model.dart';
 import '../../../widgets/ui/app_badge.dart';
@@ -56,7 +57,9 @@ class TransactionDetailTicket extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
-                    color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                    color: isDark
+                        ? AppTokens.darkTextPrimary
+                        : AppTokens.lightTextPrimary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -74,11 +77,14 @@ class TransactionDetailTicket extends StatelessWidget {
             dateFormatted,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+              color: isDark
+                  ? AppTokens.darkTextTertiary
+                  : AppTokens.lightTextTertiary,
             ),
           ),
           const SizedBox(height: 16),
-          DottedDivider(color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
+          DottedDivider(
+              color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
           const SizedBox(height: 16),
 
           // Montant principal en hero
@@ -91,7 +97,9 @@ class TransactionDetailTicket extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
-                    color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                    color: isDark
+                        ? AppTokens.darkTextTertiary
+                        : AppTokens.lightTextTertiary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -106,8 +114,10 @@ class TransactionDetailTicket extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 AppBadge(
-                  label: TransactionModel.typeDisplayName(tx.type).toUpperCase(),
-                  variant: isCredit ? AppBadgeVariant.info : AppBadgeVariant.neutral,
+                  label:
+                      TransactionModel.typeDisplayName(tx.type).toUpperCase(),
+                  variant:
+                      isCredit ? AppBadgeVariant.info : AppBadgeVariant.neutral,
                   fontSize: 11,
                 ),
               ],
@@ -115,14 +125,29 @@ class TransactionDetailTicket extends StatelessWidget {
           ),
           const SizedBox(height: 18),
 
-          // Évolution du solde caisse
+          // Évolution du solde SIM / Compte
           TransactionBalanceFlow(
+            title: 'Évolution du solde ${tx.category.name}',
             soldeAvantFormatted: soldeAvantFormatted,
             soldeApresFormatted: soldeApresFormatted,
             isDark: isDark,
           ),
+          const SizedBox(height: 12),
+
+          // Évolution du solde Espèce
+          TransactionBalanceFlow(
+            title: 'Évolution du solde Espèce (Caisse)',
+            icon: Icons.payments_rounded,
+            accentColor: const Color(0xFF10B981),
+            soldeAvantFormatted:
+                '${AppFormatters.formatAmount(tx.soldeEspeceAvant)} CFA',
+            soldeApresFormatted:
+                '${AppFormatters.formatAmount(tx.soldeEspeceApres)} CFA',
+            isDark: isDark,
+          ),
           const SizedBox(height: 18),
-          DottedDivider(color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
+          DottedDivider(
+              color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
           const SizedBox(height: 14),
 
           // Détails de l'opération
@@ -145,6 +170,44 @@ class TransactionDetailTicket extends StatelessWidget {
             isBold: true,
           ),
           ReceiptInfoLine(
+            icon: Icons.history_rounded,
+            label: 'Solde Espèce avant',
+            value: '${AppFormatters.formatAmount(tx.soldeEspeceAvant)} CFA',
+          ),
+          ReceiptInfoLine(
+            icon: Icons.account_balance_wallet_rounded,
+            label: 'Solde Espèce après',
+            value: '${AppFormatters.formatAmount(tx.soldeEspeceApres)} CFA',
+            valueColor: const Color(0xFF10B981),
+            isBold: true,
+          ),
+          if (tx.category == TransactionCategory.UV)
+            ReceiptInfoLine(
+              icon: Icons.payments_rounded,
+              label: 'Impact Caisse Espèce',
+              value: [
+                TransactionType.depot,
+                TransactionType.nafama,
+                TransactionType.transfertC2c
+              ].contains(tx.type)
+                  ? '+$amountFormatted (Espèces reçues)'
+                  : ([TransactionType.retrait, TransactionType.transfertUv]
+                          .contains(tx.type)
+                      ? '-$amountFormatted (Espèces remises)'
+                      : '0 CFA (Interne)'),
+              valueColor: [
+                TransactionType.depot,
+                TransactionType.nafama,
+                TransactionType.transfertC2c
+              ].contains(tx.type)
+                  ? AppTokens.success
+                  : ([TransactionType.retrait, TransactionType.transfertUv]
+                          .contains(tx.type)
+                      ? AppTokens.error
+                      : null),
+              isBold: true,
+            ),
+          ReceiptInfoLine(
             icon: Icons.phone_android_rounded,
             label: 'Numéro client',
             value: tx.clientPhone,
@@ -164,7 +227,8 @@ class TransactionDetailTicket extends StatelessWidget {
               value: tx.note!,
             ),
           const SizedBox(height: 12),
-          DottedDivider(color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
+          DottedDivider(
+              color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
           const SizedBox(height: 12),
 
           // Pied de ticket
@@ -174,7 +238,9 @@ class TransactionDetailTicket extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontStyle: FontStyle.italic,
-                color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                color: isDark
+                    ? AppTokens.darkTextTertiary
+                    : AppTokens.lightTextTertiary,
               ),
             ),
           ),

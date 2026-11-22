@@ -3,12 +3,18 @@ import '../../../core/tokens.dart';
 
 /// Bloc visuel présentant l'évolution du solde (Solde avant -> Solde après).
 class TransactionBalanceFlow extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color? accentColor;
   final String soldeAvantFormatted;
   final String soldeApresFormatted;
   final bool isDark;
 
   const TransactionBalanceFlow({
     super.key,
+    this.title = 'Évolution du solde caisse',
+    this.icon = Icons.analytics_outlined,
+    this.accentColor,
     required this.soldeAvantFormatted,
     required this.soldeApresFormatted,
     required this.isDark,
@@ -16,6 +22,9 @@ class TransactionBalanceFlow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveAccent =
+        accentColor ?? (isDark ? AppTokens.primary300 : AppTokens.primary600);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -31,18 +40,18 @@ class TransactionBalanceFlow extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.analytics_outlined,
+                icon,
                 size: 15,
-                color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                color: effectiveAccent,
               ),
               const SizedBox(width: 6),
               Text(
-                'Évolution du solde caisse',
+                title,
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.3,
-                  color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                  color: effectiveAccent,
                 ),
               ),
             ],
@@ -58,7 +67,9 @@ class TransactionBalanceFlow extends StatelessWidget {
                       'Solde avant',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                        color: isDark
+                            ? AppTokens.darkTextTertiary
+                            : AppTokens.lightTextTertiary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -67,7 +78,9 @@ class TransactionBalanceFlow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                        color: isDark
+                            ? AppTokens.darkTextPrimary
+                            : AppTokens.lightTextPrimary,
                       ),
                     ),
                   ],
@@ -76,7 +89,9 @@ class TransactionBalanceFlow extends StatelessWidget {
               Icon(
                 Icons.trending_flat_rounded,
                 size: 20,
-                color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                color: isDark
+                    ? AppTokens.darkTextTertiary
+                    : AppTokens.lightTextTertiary,
               ),
               Expanded(
                 child: Column(
@@ -86,7 +101,9 @@ class TransactionBalanceFlow extends StatelessWidget {
                       'Solde après',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                        color: isDark
+                            ? AppTokens.darkTextTertiary
+                            : AppTokens.lightTextTertiary,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -95,7 +112,7 @@ class TransactionBalanceFlow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
-                        color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                        color: effectiveAccent,
                       ),
                     ),
                   ],

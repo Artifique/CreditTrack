@@ -57,7 +57,8 @@ class _ToastWidget extends StatefulWidget {
   State<_ToastWidget> createState() => _ToastWidgetState();
 }
 
-class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderStateMixin {
+class _ToastWidgetState extends State<_ToastWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fade;
   late Animation<Offset> _slide;
@@ -74,7 +75,8 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
     _slide = Tween<Offset>(
       begin: const Offset(0, -0.6),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: AppTokens.curveStandard));
+    ).animate(
+        CurvedAnimation(parent: _controller, curve: AppTokens.curveStandard));
 
     _controller.forward();
 
@@ -109,7 +111,8 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
       case AppToastType.success:
         icon = Icons.check_circle_rounded;
         iconColor = AppTokens.success;
-        borderColor = isDark ? const Color(0x6610B981) : AppTokens.successBorder;
+        borderColor =
+            isDark ? const Color(0x6610B981) : AppTokens.successBorder;
         bgColor = isDark ? const Color(0xFF132E24) : Colors.white;
         break;
       case AppToastType.error:
@@ -121,7 +124,8 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
       case AppToastType.warning:
         icon = Icons.warning_rounded;
         iconColor = AppTokens.warning;
-        borderColor = isDark ? const Color(0x66F59E0B) : AppTokens.warningBorder;
+        borderColor =
+            isDark ? const Color(0x66F59E0B) : AppTokens.warningBorder;
         bgColor = isDark ? const Color(0xFF2E2215) : Colors.white;
         break;
       case AppToastType.info:
@@ -146,7 +150,8 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
               child: SlideTransition(
                 position: _slide,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: bgColor,
                     borderRadius: BorderRadius.circular(AppTokens.radiusLg),
@@ -169,7 +174,9 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
-                                  color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                                  color: isDark
+                                      ? AppTokens.darkTextPrimary
+                                      : AppTokens.lightTextPrimary,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -178,7 +185,9 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                               widget.message,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                                color: isDark
+                                    ? AppTokens.darkTextSecondary
+                                    : AppTokens.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -193,7 +202,9 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
                           child: Icon(
                             Icons.close_rounded,
                             size: 16,
-                            color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                            color: isDark
+                                ? AppTokens.darkTextTertiary
+                                : AppTokens.lightTextTertiary,
                           ),
                         ),
                       ),
@@ -208,4 +219,3 @@ class _ToastWidgetState extends State<_ToastWidget> with SingleTickerProviderSta
     );
   }
 }
-

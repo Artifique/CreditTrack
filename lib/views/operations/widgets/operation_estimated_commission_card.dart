@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/app_formatters.dart';
 
 /// Bandeau vert clair présentant la commission estimée calculée automatiquement.
 class OperationEstimatedCommissionCard extends StatelessWidget {
@@ -12,14 +12,16 @@ class OperationEstimatedCommissionCard extends StatelessWidget {
     required this.isDark,
   });
 
-  String _formatAmount(double amt) => NumberFormat('#,##0', 'fr_FR').format(amt);
+  String _formatAmount(double amt) => AppFormatters.formatAmount(amt);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFFE6F8F0),
+        color: isDark
+            ? const Color(0xFF064E3B).withValues(alpha: 0.35)
+            : const Color(0xFFE6F8F0),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark ? const Color(0xFF059669) : const Color(0xFFC7F0DF),
@@ -37,7 +39,9 @@ class OperationEstimatedCommissionCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF065F46),
+                  color: isDark
+                      ? const Color(0xFF6EE7B7)
+                      : const Color(0xFF065F46),
                 ),
               ),
               const SizedBox(height: 4),
@@ -46,7 +50,9 @@ class OperationEstimatedCommissionCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? const Color(0xFFA7F3D0) : const Color(0xFF059669),
+                  color: isDark
+                      ? const Color(0xFFA7F3D0)
+                      : const Color(0xFF059669),
                 ),
               ),
             ],

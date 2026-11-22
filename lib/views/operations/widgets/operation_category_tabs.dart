@@ -35,18 +35,29 @@ class OperationCategoryTabs extends StatelessWidget {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: selectedCategory == 'UV'
-                      ? [const BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 2))]
+                      ? [
+                          const BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 2))
+                        ]
                       : null,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   'Mobile Money',
                   style: TextStyle(
-                    fontWeight: selectedCategory == 'UV' ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: selectedCategory == 'UV'
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                     fontSize: 13.5,
                     color: selectedCategory == 'UV'
-                        ? (isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary)
-                        : (isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary),
+                        ? (isDark
+                            ? AppTokens.darkTextPrimary
+                            : AppTokens.lightTextPrimary)
+                        : (isDark
+                            ? AppTokens.darkTextSecondary
+                            : AppTokens.lightTextSecondary),
                   ),
                 ),
               ),
@@ -63,18 +74,29 @@ class OperationCategoryTabs extends StatelessWidget {
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: selectedCategory == 'CREDIT'
-                      ? [const BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 2))]
+                      ? [
+                          const BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 2))
+                        ]
                       : null,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   'Crédit',
                   style: TextStyle(
-                    fontWeight: selectedCategory == 'CREDIT' ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: selectedCategory == 'CREDIT'
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                     fontSize: 13.5,
                     color: selectedCategory == 'CREDIT'
-                        ? (isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary)
-                        : (isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary),
+                        ? (isDark
+                            ? AppTokens.darkTextPrimary
+                            : AppTokens.lightTextPrimary)
+                        : (isDark
+                            ? AppTokens.darkTextSecondary
+                            : AppTokens.lightTextSecondary),
                   ),
                 ),
               ),

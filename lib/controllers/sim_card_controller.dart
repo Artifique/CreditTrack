@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/app_formatters.dart';
 import '../models/sim_card_model.dart';
 import 'operation_phone_controller.dart';
 import 'settings_controller.dart';
@@ -137,11 +138,11 @@ class SimCardController extends ChangeNotifier {
 
   /// Get a single SIM card model by its phone number
   SimCardModel? getSim(String phone) {
-    try {
-      return _simCards.firstWhere((s) => s.phone == phone.trim());
-    } catch (_) {
-      return null;
+    final p = phone.trim();
+    for (final s in _simCards) {
+      if (s.phone == p) return s;
     }
+    return null;
   }
 
   /// Updates a SIM card's display name and optional balances
@@ -152,7 +153,8 @@ class SimCardController extends ChangeNotifier {
     double? soldeCredit,
   }) async {
     final cleanPhone = phone.trim().replaceAll(' ', '');
-    final cleanName = newName.trim().isNotEmpty ? newName.trim() : "SIM $cleanPhone";
+    final cleanName =
+        newName.trim().isNotEmpty ? newName.trim() : "SIM $cleanPhone";
 
     final prefs = await SharedPreferences.getInstance();
     final namesJson = prefs.getString(_namesPrefKey);
@@ -179,9 +181,23 @@ class SimCardController extends ChangeNotifier {
     await loadSimCards();
   }
 
-  /// Removes a SIM card from user's operation phones
+  /// Removes a SIM card from user's operation phones after verifying it contains no remaining funds
   Future<void> deleteSimCard(String phone) async {
     final cleanPhone = phone.trim().replaceAll(' ', '');
+
+    // Règle absolue de sécurité : Vérifier qu'il ne reste aucun fond sur cette SIM
+    final wallet =
+        await _settingsController.getOperationPhoneWallet(cleanPhone);
+    final uv = wallet?.soldeUv ?? 0.0;
+    final credit = wallet?.soldeCredit ?? 0.0;
+    final totalRemaining = uv + credit;
+
+    if (totalRemaining > 0) {
+      throw Exception(
+        "Impossible de supprimer cette SIM : il reste ${AppFormatters.formatAmount(totalRemaining)} CFA sur cette ligne (Solde UV: ${AppFormatters.formatAmount(uv)} F, Crédit: ${AppFormatters.formatAmount(credit)} F). Vous devez d'abord retirer ou transférer ces fonds avant de pouvoir supprimer la SIM.",
+      );
+    }
+
     final profile = await _settingsController.getProfile();
     final currentPhones = List<String>.from(profile?.operationPhones ?? []);
     currentPhones.remove(cleanPhone);

@@ -16,12 +16,17 @@ class SettingsController {
     if (userId == null) return null;
 
     AppLogger.info('Chargement profil user=$userId');
-    final response = await _supabase.from('profiles').select().eq('id', userId).maybeSingle();
+    final response = await _supabase
+        .from('profiles')
+        .select()
+        .eq('id', userId)
+        .maybeSingle();
     if (response == null) return null;
     return ProfileModel.fromJson(response);
   }
 
-  Future<OperationPhoneWalletModel?> getOperationPhoneWallet(String phone) async {
+  Future<OperationPhoneWalletModel?> getOperationPhoneWallet(
+      String phone) async {
     final userId = _userId;
     if (userId == null) return null;
     final p = phone.trim();
@@ -33,7 +38,8 @@ class SettingsController {
         .eq('phone', p)
         .maybeSingle();
     if (row == null) {
-      return OperationPhoneWalletModel(phone: p, soldeUv: 0, soldeCredit: 0, profitUv: 0, profitCredit: 0);
+      return OperationPhoneWalletModel(
+          phone: p, soldeUv: 0, soldeCredit: 0, profitUv: 0, profitCredit: 0);
     }
     return OperationPhoneWalletModel.fromJson(row);
   }

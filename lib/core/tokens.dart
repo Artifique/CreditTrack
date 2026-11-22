@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_color_palette.dart';
 
 /// Design System Tokens for CreditTrak
 /// Standardized Design Tokens matching src/styles/tokens.css
@@ -7,32 +8,37 @@ class AppTokens {
   AppTokens._();
 
   // ---------------------------------------------------------------------------
+  // 1. PALETTE DYNAMIQUE (5 Thèmes au choix)
   // ---------------------------------------------------------------------------
-  // ---------------------------------------------------------------------------
-  // ---------------------------------------------------------------------------
-  // 1. COLORS - LIGHT PALETTE (Orange Solaire Télécom & Carbone Obsidienne)
-  // ---------------------------------------------------------------------------
-  // Primaire : Orange Solaire Vif (Identité Orange Money, Recharge Crédit, Haute Visibilité)
-  static const Color primary50 = Color(0xFFFFF7ED);  // Pêche / Crème solaire doux
-  static const Color primary100 = Color(0xFFFFEDD5);
-  static const Color primary200 = Color(0xFFFED7AA);
-  static const Color primary300 = Color(0xFFFDBA74);
-  static const Color primary400 = Color(0xFFFB923C);
-  static const Color primary500 = Color(0xFFFF6600); // Orange Solaire Officiel
-  static const Color primary600 = Color(0xFFEA580C); // Orange Brûlé Profond
-  static const Color primary700 = Color(0xFFC2410C);
-  static const Color primary800 = Color(0xFF9A3412);
-  static const Color primary900 = Color(0xFF7C2D12);
+  static AppColorPalette _currentPalette = AppColorPalette.orange;
 
-  // Secondaire / Bénéfice : Vert Émeraude Jade (Gains, Commissions, Croissance)
-  static const Color secondary50 = Color(0xFFF0FDF4);
-  static const Color secondary100 = Color(0xFFDCFCE7);
-  static const Color secondary200 = Color(0xFFBBF7D0);
-  static const Color secondary300 = Color(0xFF86EFAC);
-  static const Color secondary400 = Color(0xFF34D399);
-  static const Color secondary500 = Color(0xFF059669); // Vert Émeraude Fintech
-  static const Color secondary600 = Color(0xFF047857);
-  static const Color secondary700 = Color(0xFF064E3B);
+  static void setPalette(AppColorPalette palette) {
+    _currentPalette = palette;
+  }
+
+  static AppColorPalette get currentPalette => _currentPalette;
+
+  // Nuances primaires dynamiques
+  static Color get primary50 => _currentPalette.primary50;
+  static Color get primary100 => _currentPalette.primary100;
+  static Color get primary200 => _currentPalette.primary200;
+  static Color get primary300 => _currentPalette.primary300;
+  static Color get primary400 => _currentPalette.primary400;
+  static Color get primary500 => _currentPalette.primary500;
+  static Color get primary600 => _currentPalette.primary600;
+  static Color get primary700 => _currentPalette.primary700;
+  static Color get primary800 => _currentPalette.primary800;
+  static Color get primary900 => _currentPalette.primary900;
+
+  // Nuances secondaires dynamiques
+  static Color get secondary50 => _currentPalette.secondary50;
+  static Color get secondary100 => _currentPalette.secondary100;
+  static Color get secondary200 => _currentPalette.secondary200;
+  static Color get secondary300 => _currentPalette.secondary300;
+  static Color get secondary400 => _currentPalette.secondary400;
+  static Color get secondary500 => _currentPalette.secondary500;
+  static Color get secondary600 => _currentPalette.secondary600;
+  static Color get secondary700 => _currentPalette.secondary700;
 
   // Marque Telecom / UV : Orange Solaire Pur (Orange Money / Opérations)
   static const Color orange50 = Color(0xFFFFF7ED);
@@ -62,31 +68,36 @@ class AppTokens {
   static const Color infoBorder = Color(0xFFBAE6FD);
 
   // Quick aliases
-  static const Color primary = primary500;
-  static const Color secondary = secondary500;
+  static Color get primary => primary500;
+  static Color get secondary => secondary500;
 
   // Neutres Mode Clair - Haute définition & contraste certifié WCAG AAA
-  static const Color lightBg = Color(0xFFF8FAFC);         // Blanc albâtre subtil, reposant pour les yeux
-  static const Color lightBgSubtle = Color(0xFFF1F5F9);   // Slate 100
-  static const Color lightSurface = Color(0xFFFFFFFF);     // Blanc Pur pour les cartes
-  static const Color lightBorder = Color(0xFFE2E8F0);      // Slate 200 - Délimitation nette des cartes
+  static const Color lightBg =
+      Color(0xFFF8FAFC); // Blanc albâtre subtil, reposant pour les yeux
+  static const Color lightBgSubtle = Color(0xFFF1F5F9); // Slate 100
+  static const Color lightSurface =
+      Color(0xFFFFFFFF); // Blanc Pur pour les cartes
+  static const Color lightBorder =
+      Color(0xFFE2E8F0); // Slate 200 - Délimitation nette des cartes
   static const Color lightBorderHover = Color(0xFFCBD5E1); // Slate 300
-  static const Color lightTextPrimary = Color(0xFF0F172A); // Noir d'encre Slate 900 (Contraste 16.5:1)
-  static const Color lightTextSecondary = Color(0xFF475569); // Gris Ardoise Slate 600 (Contraste 7.2:1)
-  static const Color lightTextTertiary = Color(0xFF94A3B8);  // Gris Slate 400
+  static const Color lightTextPrimary =
+      Color(0xFF0F172A); // Noir d'encre Slate 900 (Contraste 16.5:1)
+  static const Color lightTextSecondary =
+      Color(0xFF475569); // Gris Ardoise Slate 600 (Contraste 7.2:1)
+  static const Color lightTextTertiary = Color(0xFF94A3B8); // Gris Slate 400
 
   // ---------------------------------------------------------------------------
   // 2. COLORS - DARK PALETTE (Midnight Obsidian & Titanium)
   // ---------------------------------------------------------------------------
-  static const Color darkBg = Color(0xFF0B0F19);           // Midnight Obsidian riche
-  static const Color darkBgSubtle = Color(0xFF111827);     // Slate 900
-  static const Color darkSurface = Color(0xFF151D2E);      // Surface Slate profond
+  static const Color darkBg = Color(0xFF0B0F19); // Midnight Obsidian riche
+  static const Color darkBgSubtle = Color(0xFF111827); // Slate 900
+  static const Color darkSurface = Color(0xFF151D2E); // Surface Slate profond
   static const Color darkSurfaceHover = Color(0xFF1E293B);
-  static const Color darkBorder = Color(0xFF26334D);       // Bordure visible et nette
+  static const Color darkBorder = Color(0xFF26334D); // Bordure visible et nette
   static const Color darkBorderHover = Color(0xFF3B4D71);
-  static const Color darkTextPrimary = Color(0xFFF8FAFC);  // Blanc éclatant
+  static const Color darkTextPrimary = Color(0xFFF8FAFC); // Blanc éclatant
   static const Color darkTextSecondary = Color(0xFF94A3B8); // Slate 400
-  static const Color darkTextTertiary = Color(0xFF64748B);  // Slate 500
+  static const Color darkTextTertiary = Color(0xFF64748B); // Slate 500
 
   static const Color darkSuccessBg = Color(0x26059669);
   static const Color darkSuccessText = Color(0xFF34D399);
@@ -103,29 +114,24 @@ class AppTokens {
   // ---------------------------------------------------------------------------
   // 3. GRADIENTS
   // ---------------------------------------------------------------------------
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFFFF7900), Color(0xFFEA580C)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static LinearGradient get primaryGradient => _currentPalette.primaryGradient;
 
-  static const LinearGradient secondaryGradient = LinearGradient(
-    colors: [Color(0xFF10B981), Color(0xFF047857)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static LinearGradient get secondaryGradient =>
+      _currentPalette.secondaryGradient;
 
-  static const LinearGradient cardGradientUV = LinearGradient(
-    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static LinearGradient get cardGradientUV => _currentPalette.cardGradientUV;
 
-  static const LinearGradient cardGradientCredit = LinearGradient(
-    colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF059669)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static LinearGradient get cardGradientCredit =>
+      _currentPalette.cardGradientCredit;
+
+  static LinearGradient get cardGradientCash =>
+      _currentPalette.cardGradientCash;
+
+  static LinearGradient get cardGradientProfitUV =>
+      _currentPalette.cardGradientProfitUV;
+
+  static LinearGradient get cardGradientProfitCredit =>
+      _currentPalette.cardGradientProfitCredit;
 
   static const LinearGradient surfaceGlassGradient = LinearGradient(
     colors: [Color(0x33FFFFFF), Color(0x0DFFFFFF)],
@@ -171,7 +177,8 @@ class AppTokens {
   static final BorderRadius borderRadiusXl = BorderRadius.circular(radiusXl);
   static final BorderRadius borderRadius2Xl = BorderRadius.circular(radius2Xl);
   static final BorderRadius borderRadius3Xl = BorderRadius.circular(radius3Xl);
-  static final BorderRadius borderRadiusPill = BorderRadius.circular(radiusPill);
+  static final BorderRadius borderRadiusPill =
+      BorderRadius.circular(radiusPill);
 
   // ---------------------------------------------------------------------------
   // 6. SHADOWS & ELEVATION

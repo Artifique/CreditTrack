@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_logger.dart';
+import 'cash_balance_controller.dart';
 import '../models/operation_phone_wallet_model.dart';
 import '../models/profile_model.dart';
 import '../models/transaction_model.dart';
@@ -37,7 +38,8 @@ class TransactionController {
   /// Ce flux effectue une pagination automatique par blocs de 1 000 pour récupérer
   /// l'intégralité des transactions de la base (même au-delà du plafond serveur PostgREST de 1000)
   /// et écoute les événements Realtime de Supabase (INSERT, UPDATE, DELETE).
-  Stream<List<TransactionModel>> watchTransactions({String? merchantPhone}) async* {
+  Stream<List<TransactionModel>> watchTransactions(
+      {String? merchantPhone}) async* {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       yield const [];
@@ -68,15 +70,19 @@ class TransactionController {
     }
   }
 
-  static List<TransactionModel> _filterTransactions(List<TransactionModel> list, String? merchantPhone) {
+  static List<TransactionModel> _filterTransactions(
+      List<TransactionModel> list, String? merchantPhone) {
     final phone = merchantPhone?.trim();
     if (phone != null && phone.isNotEmpty) {
-      return list.where((t) => (t.merchantPhone ?? '').trim() == phone).toList();
+      return list
+          .where((t) => (t.merchantPhone ?? '').trim() == phone)
+          .toList();
     }
     return list;
   }
 
   static void _notify() {
+    CashBalanceController.instance.syncWithTransactions(_allTransactions);
     if (!_txStreamController.isClosed) {
       _txStreamController.add(List.unmodifiable(_allTransactions));
     }
@@ -152,13 +158,15 @@ class TransactionController {
                 _notify();
               } else if (payload.eventType == PostgresChangeEvent.update) {
                 final updatedTx = TransactionModel.fromJson(payload.newRecord);
-                final idx = _allTransactions.indexWhere((t) => t.id == updatedTx.id);
+                final idx =
+                    _allTransactions.indexWhere((t) => t.id == updatedTx.id);
                 if (idx != -1) {
                   _allTransactions[idx] = updatedTx;
                 } else {
                   _allTransactions.insert(0, updatedTx);
                 }
-                _allTransactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                _allTransactions
+                    .sort((a, b) => b.createdAt.compareTo(a.createdAt));
                 _notify();
               } else if (payload.eventType == PostgresChangeEvent.delete) {
                 final id = payload.oldRecord['id'] as String?;
@@ -186,6 +194,10 @@ class TransactionController {
 
   static String mapTransactionError(Object e) {
     final s = e.toString();
+    if (s.contains('Solde Espèce insuffisant') ||
+        s.contains('SOLDE_ESPECE_INSUFFISANT')) {
+      return 'Solde Espèce insuffisant';
+    }
     if (s.contains('SOLDE_INSUFFISANT')) {
       return 'Solde insuffisant : cette opération rendrait le solde négatif.';
     }
@@ -202,7 +214,8 @@ class TransactionController {
   }
 
   /// Vue des soldes / bénéfices : par [merchantPhone] si renseigné, sinon totaux profil + somme des bénéfices.
-  Future<OperationPhoneWalletModel> getWalletViewForFilter({String? merchantPhone}) async {
+  Future<OperationPhoneWalletModel> getWalletViewForFilter(
+      {String? merchantPhone}) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return OperationPhoneWalletModel.empty;
 
@@ -215,13 +228,21 @@ class TransactionController {
           .eq('phone', phone)
           .maybeSingle();
       if (row == null) {
-        return OperationPhoneWalletModel(phone: phone, soldeUv: 0, soldeCredit: 0, profitUv: 0, profitCredit: 0);
+        return OperationPhoneWalletModel(
+            phone: phone,
+            soldeUv: 0,
+            soldeCredit: 0,
+            profitUv: 0,
+            profitCredit: 0);
       }
       return OperationPhoneWalletModel.fromJson(row);
     }
 
     final profile = await getProfileData();
-    final rows = await _supabase.from('operation_phone_wallets').select('profit_uv, profit_credit').eq('user_id', userId);
+    final rows = await _supabase
+        .from('operation_phone_wallets')
+        .select('profit_uv, profit_credit')
+        .eq('user_id', userId);
 
     var pu = 0.0;
     var pc = 0.0;
@@ -245,20 +266,32 @@ class TransactionController {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return null;
 
-    final response = await _supabase
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .single();
-    
+    final response =
+        await _supabase.from('profiles').select().eq('id', userId).single();
+
     return ProfileModel.fromJson(response);
   }
 
   // Ajouter une nouvelle transaction
   Future<TransactionModel> addTransaction(TransactionModel transaction) async {
+    // Protection du solde Espèce : vérifier que les espèces en caisse suffisent
+    final cashDelta =
+        CashBalanceController.getCashDeltaForTransaction(transaction);
+    if (cashDelta < 0) {
+      final availableCash = CashBalanceController.instance.soldeEspece;
+      if (transaction.amount > availableCash) {
+        throw Exception("Solde Espèce insuffisant");
+      }
+    }
+
     try {
-      AppLogger.info('Insertion transaction ${transaction.type.name} user=${transaction.userId}');
-      final response = await _supabase.from('transactions').insert(transaction.toJson()).select().single();
+      AppLogger.info(
+          'Insertion transaction ${transaction.type.name} user=${transaction.userId}');
+      final response = await _supabase
+          .from('transactions')
+          .insert(transaction.toJson())
+          .select()
+          .single();
       final created = TransactionModel.fromJson(response);
       _allTransactions.removeWhere((t) => t.id == created.id);
       _allTransactions.insert(0, created);
@@ -270,13 +303,29 @@ class TransactionController {
     }
   }
 
-  Future<TransactionModel> updateTransaction(TransactionModel transaction) async {
+  Future<TransactionModel> updateTransaction(
+      TransactionModel transaction) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       throw Exception("Session expirée. Reconnecte-toi.");
     }
     if (transaction.id == null) {
       throw Exception("Transaction invalide: identifiant manquant.");
+    }
+
+    // Protection du solde Espèce sur modification
+    final oldTx = _allTransactions
+        .cast<TransactionModel?>()
+        .firstWhere((t) => t?.id == transaction.id, orElse: () => null);
+    final oldDelta = oldTx != null
+        ? CashBalanceController.getCashDeltaForTransaction(oldTx)
+        : 0.0;
+    final newDelta =
+        CashBalanceController.getCashDeltaForTransaction(transaction);
+    final projectedCash =
+        CashBalanceController.instance.soldeEspece - oldDelta + newDelta;
+    if (projectedCash < 0) {
+      throw Exception("Solde Espèce insuffisant");
     }
 
     try {
@@ -291,7 +340,8 @@ class TransactionController {
         'p_amount': transaction.amount,
         'p_note': transaction.note,
       });
-      final updated = TransactionModel.fromJson((response as List).first as Map<String, dynamic>);
+      final updated = TransactionModel.fromJson(
+          (response as List).first as Map<String, dynamic>);
       final idx = _allTransactions.indexWhere((t) => t.id == updated.id);
       if (idx != -1) {
         _allTransactions[idx] = updated;
@@ -326,7 +376,8 @@ class TransactionController {
   }
 
   /// Récupère les transactions (illimité par défaut avec pagination automatique pour dépasser le plafond serveur de 1000).
-  Future<List<TransactionModel>> getTransactions({int? limit, String? merchantPhone}) async {
+  Future<List<TransactionModel>> getTransactions(
+      {int? limit, String? merchantPhone}) async {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return [];
 
@@ -336,8 +387,11 @@ class TransactionController {
       if (p != null && p.isNotEmpty) {
         q = q.eq('merchant_phone', p);
       }
-      final response = await q.order('created_at', ascending: false).limit(limit);
-      return (response as List).map((json) => TransactionModel.fromJson(json)).toList();
+      final response =
+          await q.order('created_at', ascending: false).limit(limit);
+      return (response as List)
+          .map((json) => TransactionModel.fromJson(json))
+          .toList();
     }
 
     if (!_isLoaded) {
@@ -348,11 +402,13 @@ class TransactionController {
 
   /// Récupère la liste enrichie des clients issus de l'historique des transactions.
   /// Dédupliqués, triés du plus récent au plus ancien.
-  Future<List<ClientHistorySuggestion>> getRecentClientHistorySuggestions() async {
+  Future<List<ClientHistorySuggestion>>
+      getRecentClientHistorySuggestions() async {
     final seen = <String>{};
     final result = <ClientHistorySuggestion>[];
 
-    void addFromTx(String rawPhone, String rawName, double amount, DateTime? date) {
+    void addFromTx(
+        String rawPhone, String rawName, double amount, DateTime? date) {
       final phone = rawPhone.trim();
       final digits = phone.replaceAll(RegExp(r'\D'), '');
       if (digits.length >= 8 && seen.add(digits)) {
@@ -393,7 +449,8 @@ class TransactionController {
           addFromTx(phone, name, amount, date);
         }
       } catch (e) {
-        AppLogger.error('Erreur getRecentClientHistorySuggestions Supabase: $e');
+        AppLogger.error(
+            'Erreur getRecentClientHistorySuggestions Supabase: $e');
       }
     }
     return result;
@@ -407,14 +464,15 @@ class TransactionController {
   }
 
   // Calculer les statistiques simples pour le dashboard
-  double calculateTotalDaily(List<TransactionModel> transactions, TransactionType type) {
+  double calculateTotalDaily(
+      List<TransactionModel> transactions, TransactionType type) {
     final today = DateTime.now();
     return transactions
-        .where((t) => 
-          t.type == type && 
-          t.createdAt.day == today.day && 
-          t.createdAt.month == today.month && 
-          t.createdAt.year == today.year)
+        .where((t) =>
+            t.type == type &&
+            t.createdAt.day == today.day &&
+            t.createdAt.month == today.month &&
+            t.createdAt.year == today.year)
         .fold(0, (sum, t) => sum + t.amount);
   }
 }

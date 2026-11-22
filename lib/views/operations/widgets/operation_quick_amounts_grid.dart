@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../../../core/app_formatters.dart';
 import '../../../core/tokens.dart';
 
 /// Grille 2×3 des 6 montants rapides conforme à la capture d'écran.
@@ -17,11 +17,11 @@ class OperationQuickAmountsGrid extends StatelessWidget {
 
   static const List<int> quickAmounts = [1000, 2000, 3000, 4000, 5000, 10000];
 
-  String _formatAmount(int amt) => NumberFormat('#,##0', 'fr_FR').format(amt);
+  String _formatAmount(int amt) => AppFormatters.formatAmount(amt);
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = AppTokens.primary500;
+    final primaryColor = AppTokens.primary500;
 
     return Column(
       children: [
@@ -66,7 +66,9 @@ class OperationQuickAmountsGrid extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? iconColor
-                  : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                  : (isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0)),
               width: isSelected ? 1.6 : 1.0,
             ),
             boxShadow: const [

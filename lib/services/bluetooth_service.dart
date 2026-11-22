@@ -14,7 +14,8 @@ class BluetoothPrinterService {
     if (!Platform.isAndroid) return;
     await Permission.bluetoothConnect.request();
     await Permission.bluetoothScan.request();
-    if (await Permission.location.isDenied || await Permission.location.isPermanentlyDenied) {
+    if (await Permission.location.isDenied ||
+        await Permission.location.isPermanentlyDenied) {
       await Permission.location.request();
     }
   }
@@ -32,13 +33,16 @@ class BluetoothPrinterService {
   }
 
   // Impression du reçu thermique
-  Future<void> printReceipt(TransactionModel transaction, String businessName) async {
+  Future<void> printReceipt(
+      TransactionModel transaction, String businessName) async {
     bool? isConnected = await bluetooth.isConnected;
     if (isConnected != true) {
-      throw Exception('Aucune imprimante Bluetooth connectée. Va dans Paramètres → Imprimante.');
+      throw Exception(
+          'Aucune imprimante Bluetooth connectée. Va dans Paramètres → Imprimante.');
     }
 
-    final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt);
+    final dateStr =
+        DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt);
 
     // Design du reçu pour imprimante thermique
     bluetooth.printCustom(businessName.toUpperCase(), 3, 1); // Taille 3, Centré
@@ -48,13 +52,23 @@ class BluetoothPrinterService {
       bluetooth.printCustom("N° JOURNAL: #${transaction.journalSeq}", 2, 0);
     }
     bluetooth.printCustom(
-        "TYPE: ${TransactionModel.typeDisplayName(transaction.type).toUpperCase()}", 2, 0);
+        "TYPE: ${TransactionModel.typeDisplayName(transaction.type).toUpperCase()}",
+        2,
+        0);
     bluetooth.printCustom("CLIENT: ${transaction.clientName}", 1, 0);
     bluetooth.printCustom("TEL: ${transaction.clientPhone}", 1, 0);
     bluetooth.printCustom("--------------------------------", 1, 1);
     bluetooth.printCustom("TOTAL: ${transaction.amount.round()} CFA", 3, 1);
-    bluetooth.printCustom("SOLDE AVANT: ${transaction.soldeAvant.round()} CFA", 1, 0);
-    bluetooth.printCustom("SOLDE APRES: ${transaction.soldeApres.round()} CFA", 2, 0);
+    bluetooth.printCustom(
+        "SOLDE AVANT: ${transaction.soldeAvant.round()} CFA", 1, 0);
+    bluetooth.printCustom(
+        "SOLDE APRES: ${transaction.soldeApres.round()} CFA", 2, 0);
+    if (transaction.category == TransactionCategory.UV) {
+      bluetooth.printCustom(
+          "ESPECE AVANT: ${transaction.soldeEspeceAvant.round()} CFA", 1, 0);
+      bluetooth.printCustom(
+          "ESPECE APRES: ${transaction.soldeEspeceApres.round()} CFA", 2, 0);
+    }
     bluetooth.printCustom("--------------------------------", 1, 1);
     bluetooth.printCustom("Date: $dateStr", 1, 1);
     bluetooth.printNewLine();

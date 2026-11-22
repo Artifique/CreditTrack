@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/app_formatters.dart';
 import '../../../core/app_logger.dart';
 import '../../../core/tokens.dart';
 import '../../../core/user_feedback.dart';
@@ -26,13 +27,15 @@ class OperationSuccessView extends StatelessWidget {
     required this.onSameClient,
   });
 
-  String _formatAmount(double amt) => NumberFormat('#,##0', 'fr_FR').format(amt);
+  String _formatAmount(double amt) => AppFormatters.formatAmount(amt);
 
   @override
   Widget build(BuildContext context) {
     final tx = transaction;
     final dateStr = DateFormat('dd/MM/yyyy à HH:mm').format(tx.createdAt);
-    final ref = tx.journalSeq != null ? '#${tx.journalSeq}' : (tx.id?.substring(0, 8).toUpperCase() ?? 'OP-RÉUSSIE');
+    final ref = tx.journalSeq != null
+        ? '#${tx.journalSeq}'
+        : (tx.id?.substring(0, 8).toUpperCase() ?? 'OP-RÉUSSIE');
 
     return SingleChildScrollView(
       key: const ValueKey('part_3_success'),
@@ -47,7 +50,8 @@ class OperationSuccessView extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0xFF10B981), width: 2),
             ),
-            child: const Icon(Icons.check_rounded, color: Color(0xFF10B981), size: 40),
+            child: const Icon(Icons.check_rounded,
+                color: Color(0xFF10B981), size: 40),
           ),
           const SizedBox(height: 16),
           Text(
@@ -76,21 +80,39 @@ class OperationSuccessView extends StatelessWidget {
               color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color:
+                    isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
               ),
               boxShadow: const [
-                BoxShadow(color: Color(0x06000000), blurRadius: 10, offset: Offset(0, 3)),
+                BoxShadow(
+                    color: Color(0x06000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 3)),
               ],
             ),
             child: Column(
               children: [
-                ReceiptInfoLine(label: 'Type', value: TransactionModel.typeDisplayName(tx.type)),
-                ReceiptInfoLine(label: 'Montant', value: '${_formatAmount(tx.amount)} FCFA', isBold: true),
-                ReceiptInfoLine(label: 'Commission', value: '+${_formatAmount(tx.commission)} FCFA', valueColor: AppTokens.success),
-                ReceiptInfoLine(label: 'Compte SIM', value: tx.merchantPhone ?? 'SIM Principale'),
+                ReceiptInfoLine(
+                    label: 'Type',
+                    value: TransactionModel.typeDisplayName(tx.type)),
+                ReceiptInfoLine(
+                    label: 'Montant',
+                    value: '${_formatAmount(tx.amount)} FCFA',
+                    isBold: true),
+                ReceiptInfoLine(
+                    label: 'Commission',
+                    value: '+${_formatAmount(tx.commission)} FCFA',
+                    valueColor: AppTokens.success),
+                ReceiptInfoLine(
+                    label: 'Compte SIM',
+                    value: tx.merchantPhone ?? 'SIM Principale'),
                 ReceiptInfoLine(label: 'Client', value: tx.clientPhone),
                 const SizedBox(height: 12),
-                Divider(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                Divider(
+                    height: 1,
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0)),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -100,25 +122,31 @@ class OperationSuccessView extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute<void>(
-                            builder: (_) => ReceiptPage(transaction: tx, businessName: businessName),
+                            builder: (_) => ReceiptPage(
+                                transaction: tx, businessName: businessName),
                           ),
                         );
                       },
                       icon: const Icon(Icons.receipt_long_rounded, size: 18),
-                      label: const Text('Voir le Reçu', style: TextStyle(fontWeight: FontWeight.w700)),
+                      label: const Text('Voir le Reçu',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                     TextButton.icon(
                       onPressed: () async {
                         try {
-                          final file = await PdfService().generateReceipt(tx, businessName);
+                          final file = await PdfService()
+                              .generateReceipt(tx, businessName);
                           await ExportShareService.sharePdf(file);
                         } catch (e, st) {
                           AppLogger.error('Erreur partage PDF succès', e, st);
-                          if (context.mounted) UserFeedback.showErrorModal(context, e);
+                          if (context.mounted) {
+                            UserFeedback.showErrorModal(context, e);
+                          }
                         }
                       },
                       icon: const Icon(Icons.share_rounded, size: 18),
-                      label: const Text('Partager Reçu', style: TextStyle(fontWeight: FontWeight.w700)),
+                      label: const Text('Partager Reçu',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
@@ -133,11 +161,13 @@ class OperationSuccessView extends StatelessWidget {
             height: 52,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.add_circle_outline_rounded),
-              label: const Text('NOUVELLE OPÉRATION', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text('NOUVELLE OPÉRATION',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTokens.primary500,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: onNewOperation,
             ),
@@ -148,11 +178,13 @@ class OperationSuccessView extends StatelessWidget {
             height: 52,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.person_add_alt_1_rounded),
-              label: const Text('MÊME CLIENT', style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text('MÊME CLIENT',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppTokens.primary500,
-                side: const BorderSide(color: AppTokens.primary500),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                side: BorderSide(color: AppTokens.primary500),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               onPressed: onSameClient,
             ),

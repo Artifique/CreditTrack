@@ -3,10 +3,12 @@ class ProfileModel {
   final String businessName;
   final String? ownerName;
   final String? phoneNumber;
+
   /// Jusqu'à 6 numéros de transfert utilisés pour les opérations (agent).
   final List<String> operationPhones;
   final double soldeUv;
   final double soldeCredit;
+  final double soldeEspece;
   final String currency;
 
   ProfileModel({
@@ -17,6 +19,7 @@ class ProfileModel {
     this.operationPhones = const [],
     required this.soldeUv,
     required this.soldeCredit,
+    this.soldeEspece = 0,
     required this.currency,
   });
 
@@ -30,7 +33,10 @@ class ProfileModel {
     List<String> parseOperationPhones(dynamic v) {
       if (v == null) return [];
       if (v is List) {
-        return v.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+        return v
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
       }
       return [];
     }
@@ -43,6 +49,7 @@ class ProfileModel {
       operationPhones: parseOperationPhones(json['operation_phones']),
       soldeUv: asDouble(json['solde_uv']),
       soldeCredit: asDouble(json['solde_credit']),
+      soldeEspece: asDouble(json['solde_espece']),
       currency: (json['currency'] ?? 'CFA').toString(),
     );
   }

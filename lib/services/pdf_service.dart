@@ -27,9 +27,11 @@ class HistoryReportFilters {
 
 class PdfService {
   // Générer un reçu de transaction unique
-  Future<File> generateReceipt(TransactionModel transaction, String businessName) async {
+  Future<File> generateReceipt(
+      TransactionModel transaction, String businessName) async {
     final pdf = pw.Document();
-    final dateStr = DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt);
+    final dateStr =
+        DateFormat('dd/MM/yyyy HH:mm').format(transaction.createdAt);
 
     pdf.addPage(
       pw.Page(
@@ -39,24 +41,29 @@ class PdfService {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
-              pw.Text(businessName.toUpperCase(), style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 16)),
+              pw.Text(businessName.toUpperCase(),
+                  style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold, fontSize: 16)),
               pw.SizedBox(height: 5),
               pw.Text("---------------------------------"),
               pw.SizedBox(height: 10),
-                  if (transaction.journalSeq != null) ...[
-                    pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                      children: [
-                        pw.Text("N° journal:"),
-                        pw.Text("#${transaction.journalSeq}", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      ],
-                    ),
+              if (transaction.journalSeq != null) ...[
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text("N° journal:"),
+                    pw.Text("#${transaction.journalSeq}",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                   ],
-                  pw.Row(
+                ),
+              ],
+              pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("Type:"),
-                  pw.Text(TransactionModel.typeDisplayName(transaction.type).toUpperCase(),
+                  pw.Text(
+                      TransactionModel.typeDisplayName(transaction.type)
+                          .toUpperCase(),
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
               ),
@@ -79,36 +86,68 @@ class PdfService {
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text("MONTANT:", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.amount.round())} CFA", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text("MONTANT:",
+                      style: pw.TextStyle(
+                          fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                      "${NumberFormat('#,##0', 'fr_FR').format(transaction.amount.round())} CFA",
+                      style: pw.TextStyle(
+                          fontSize: 14, fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("Commission:"),
-                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.commission.round())} CFA", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                      "${NumberFormat('#,##0', 'fr_FR').format(transaction.commission.round())} CFA",
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("Solde avant:"),
-                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeAvant.round())} CFA"),
+                  pw.Text(
+                      "${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeAvant.round())} CFA"),
                 ],
               ),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
                   pw.Text("Solde après:"),
-                  pw.Text("${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeApres.round())} CFA", style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  pw.Text(
+                      "${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeApres.round())} CFA",
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
               ),
+              if (transaction.category == TransactionCategory.UV) ...[
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text("Solde Espèce avant:"),
+                    pw.Text(
+                        "${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeEspeceAvant.round())} CFA"),
+                  ],
+                ),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text("Solde Espèce après:"),
+                    pw.Text(
+                        "${NumberFormat('#,##0', 'fr_FR').format(transaction.soldeEspeceApres.round())} CFA",
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                  ],
+                ),
+              ],
               pw.Text("---------------------------------"),
               pw.SizedBox(height: 10),
-              pw.Text("Date: $dateStr", style: const pw.TextStyle(fontSize: 10)),
+              pw.Text("Date: $dateStr",
+                  style: const pw.TextStyle(fontSize: 10)),
               pw.SizedBox(height: 20),
-              pw.Text("Merci de votre confiance !", style: pw.TextStyle(fontStyle: pw.FontStyle.italic, fontSize: 10)),
+              pw.Text("Merci de votre confiance !",
+                  style: pw.TextStyle(
+                      fontStyle: pw.FontStyle.italic, fontSize: 10)),
             ],
           );
         },
@@ -136,9 +175,11 @@ class PdfService {
     required List<TransactionModel> transactions,
     required HistoryReportFilters filters,
   }) async {
-    final built = await buildHistoryPdf(transactions: transactions, filters: filters);
+    final built =
+        await buildHistoryPdf(transactions: transactions, filters: filters);
     if (kIsWeb) {
-      throw UnsupportedError('Enregistrement fichier indisponible sur le web. Utilise buildHistoryPdf.');
+      throw UnsupportedError(
+          'Enregistrement fichier indisponible sur le web. Utilise buildHistoryPdf.');
     }
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/${built.filename}');
@@ -156,7 +197,8 @@ class PdfService {
 
     final count = transactions.length;
     final totalAmount = transactions.fold<double>(0, (s, t) => s + t.amount);
-    final totalCommission = transactions.fold<double>(0, (s, t) => s + t.commission);
+    final totalCommission =
+        transactions.fold<double>(0, (s, t) => s + t.commission);
 
     String money(double v) => '${amountFmt.format(v.round())} F';
 
@@ -168,7 +210,8 @@ class PdfService {
     if (filters.searchQuery.trim().isNotEmpty) {
       filterLines.add('Recherche : ${filters.searchQuery.trim()}');
     }
-    if (filters.merchantPhone != null && filters.merchantPhone!.trim().isNotEmpty) {
+    if (filters.merchantPhone != null &&
+        filters.merchantPhone!.trim().isNotEmpty) {
       filterLines.add('N° transfert : ${filters.merchantPhone}');
     }
 
@@ -193,26 +236,34 @@ class PdfService {
           ),
           pw.SizedBox(height: 16),
           pw.TableHelper.fromTextArray(
-            headers: ['Date et heure', 'Type', 'Client / tél.', 'N° transfert', 'Montant', 'Commission'],
-            data: transactions
-                .map((t) {
-                  final phone = t.clientPhone.trim();
-                  final client = phone.isEmpty ? t.clientName : '${t.clientName}  $phone';
-                  return [
-                    dateFmt.format(t.createdAt),
-                    TransactionModel.typeDisplayName(t.type),
-                    client,
-                    t.merchantPhone ?? '—',
-                    money(t.amount),
-                    money(t.commission),
-                  ];
-                })
-                .toList(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
+            headers: [
+              'Date et heure',
+              'Type',
+              'Client / tél.',
+              'N° transfert',
+              'Montant',
+              'Commission'
+            ],
+            data: transactions.map((t) {
+              final phone = t.clientPhone.trim();
+              final client =
+                  phone.isEmpty ? t.clientName : '${t.clientName}  $phone';
+              return [
+                dateFmt.format(t.createdAt),
+                TransactionModel.typeDisplayName(t.type),
+                client,
+                t.merchantPhone ?? '—',
+                money(t.amount),
+                money(t.commission),
+              ];
+            }).toList(),
+            headerStyle:
+                pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 9),
             cellStyle: const pw.TextStyle(fontSize: 8),
             cellAlignment: pw.Alignment.centerLeft,
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-            cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            cellPadding:
+                const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
           ),
         ],
       ),
@@ -221,7 +272,8 @@ class PdfService {
   }
 
   // Enregistrer le fichier dans le stockage local
-  Future<File> _saveDocument({required String name, required pw.Document pdf}) async {
+  Future<File> _saveDocument(
+      {required String name, required pw.Document pdf}) async {
     final bytes = await pdf.save();
     final dir = await getApplicationDocumentsDirectory();
     final file = File('${dir.path}/$name');

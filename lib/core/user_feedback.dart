@@ -14,13 +14,17 @@ class UserFeedback {
     AppToast.show(context, message: message, title: title, type: type);
   }
 
-  static void showSuccessToast(BuildContext context, String message, {String? title}) {
-    AppToast.show(context, message: message, title: title, type: AppToastType.success);
+  static void showSuccessToast(BuildContext context, String message,
+      {String? title}) {
+    AppToast.show(context,
+        message: message, title: title, type: AppToastType.success);
   }
 
-  static void showErrorToast(BuildContext context, Object error, {String? title}) {
+  static void showErrorToast(BuildContext context, Object error,
+      {String? title}) {
     final message = toReadableMessage(error);
-    AppToast.show(context, message: message, title: title, type: AppToastType.error);
+    AppToast.show(context,
+        message: message, title: title, type: AppToastType.error);
   }
 
   /// Modern modal dialog with consistent design system tokens
@@ -30,9 +34,11 @@ class UserFeedback {
 
     return showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: isDark ? AppTokens.darkSurface : AppTokens.lightSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusXl)),
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor:
+            isDark ? AppTokens.darkSurface : AppTokens.lightSurface,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusXl)),
         title: Row(
           children: [
             Container(
@@ -41,7 +47,8 @@ class UserFeedback {
                 color: isDark ? AppTokens.darkErrorBg : AppTokens.errorBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.error_outline_rounded, color: AppTokens.error, size: 24),
+              child: const Icon(Icons.error_outline_rounded,
+                  color: AppTokens.error, size: 24),
             ),
             const SizedBox(width: 12),
             Text(
@@ -49,7 +56,9 @@ class UserFeedback {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
-                color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                color: isDark
+                    ? AppTokens.darkTextPrimary
+                    : AppTokens.lightTextPrimary,
               ),
             ),
           ],
@@ -59,7 +68,9 @@ class UserFeedback {
           style: TextStyle(
             fontSize: 14,
             height: 1.5,
-            color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+            color: isDark
+                ? AppTokens.darkTextSecondary
+                : AppTokens.lightTextSecondary,
           ),
         ),
         actions: [
@@ -67,7 +78,7 @@ class UserFeedback {
             label: 'Compris',
             size: AppButtonSize.sm,
             variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
           ),
         ],
       ),
@@ -79,9 +90,11 @@ class UserFeedback {
 
     return showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: isDark ? AppTokens.darkSurface : AppTokens.lightSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTokens.radiusXl)),
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor:
+            isDark ? AppTokens.darkSurface : AppTokens.lightSurface,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTokens.radiusXl)),
         title: Row(
           children: [
             Container(
@@ -90,7 +103,8 @@ class UserFeedback {
                 color: isDark ? AppTokens.darkSuccessBg : AppTokens.successBg,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_circle_outline_rounded, color: AppTokens.success, size: 24),
+              child: const Icon(Icons.check_circle_outline_rounded,
+                  color: AppTokens.success, size: 24),
             ),
             const SizedBox(width: 12),
             Text(
@@ -98,7 +112,9 @@ class UserFeedback {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
-                color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                color: isDark
+                    ? AppTokens.darkTextPrimary
+                    : AppTokens.lightTextPrimary,
               ),
             ),
           ],
@@ -108,7 +124,9 @@ class UserFeedback {
           style: TextStyle(
             fontSize: 14,
             height: 1.5,
-            color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+            color: isDark
+                ? AppTokens.darkTextSecondary
+                : AppTokens.lightTextSecondary,
           ),
         ),
         actions: [
@@ -116,7 +134,7 @@ class UserFeedback {
             label: 'OK',
             size: AppButtonSize.sm,
             variant: AppButtonVariant.primary,
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogCtx),
           ),
         ],
       ),
@@ -127,16 +145,20 @@ class UserFeedback {
     final raw = error.toString();
     final lower = raw.toLowerCase();
 
-    if (lower.contains('socketexception') || lower.contains('failed host lookup') || lower.contains('network')) {
+    if (lower.contains('socketexception') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('network')) {
       return "Connexion internet indisponible. Vérifie ton réseau puis réessaie.";
     }
-    if (lower.contains('invalid login credentials') || lower.contains('invalid_credentials')) {
+    if (lower.contains('invalid login credentials') ||
+        lower.contains('invalid_credentials')) {
       return "Email ou mot de passe incorrect.";
     }
     if (lower.contains('user already registered')) {
       return "Cet email est déjà utilisé. Connecte-toi ou change d'email.";
     }
-    if (lower.contains('permission denied') || lower.contains('row-level security')) {
+    if (lower.contains('permission denied') ||
+        lower.contains('row-level security')) {
       return "Action non autorisée. Vérifie les permissions de ton compte.";
     }
     if (lower.contains('timeout')) {

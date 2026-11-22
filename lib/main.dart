@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/theme.dart';
+import 'controllers/cash_balance_controller.dart';
 import 'controllers/operation_phone_controller.dart';
 import 'controllers/theme_mode_controller.dart';
 import 'views/auth/splash_page.dart';
@@ -24,10 +25,12 @@ void main() async {
   // Initialisation Supabase (remplacez par vos clés)
   await Supabase.initialize(
     url: 'https://dcirsmtvrtiekfxhjtvo.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXJzbXR2cnRpZWtmeGhqdHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ5OTcsImV4cCI6MjA5MDYyMDk5N30.asGxG9RsACj_mLzl782dk8EBST5QAIavlHVWnOrQ64I',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjaXJzbXR2cnRpZWtmeGhqdHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDQ5OTcsImV4cCI6MjA5MDYyMDk5N30.asGxG9RsACj_mLzl782dk8EBST5QAIavlHVWnOrQ64I',
   );
 
   await OperationPhoneController.instance.init();
+  await CashBalanceController.instance.init();
   await ThemeModeController.instance.init();
   await initializeDateFormatting('fr', null);
 
@@ -42,11 +45,12 @@ class CreditTrakApp extends StatelessWidget {
     return ListenableBuilder(
       listenable: ThemeModeController.instance,
       builder: (context, _) {
+        final palette = ThemeModeController.instance.activePalette;
         return MaterialApp(
           title: 'CreditTrak',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          theme: AppTheme.buildLightTheme(palette),
+          darkTheme: AppTheme.buildDarkTheme(palette),
           themeMode: ThemeModeController.instance.themeMode,
           home: const SplashPage(),
           routes: {
@@ -62,7 +66,8 @@ class CreditTrakApp extends StatelessWidget {
             '/settings': (context) => const SettingsPage(),
             '/settings-business': (context) => const BusinessProfilePage(),
             '/settings-sims': (context) => const SimCardsSettingsPage(),
-            '/settings-commission-rates': (context) => const CommissionRatesPage(),
+            '/settings-commission-rates': (context) =>
+                const CommissionRatesPage(),
             '/settings-printer': (context) => const PrinterSettingsPage(),
             '/reports': (context) => const ReportsPage(),
           },
@@ -71,4 +76,3 @@ class CreditTrakApp extends StatelessWidget {
     );
   }
 }
-

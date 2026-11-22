@@ -40,15 +40,22 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Configuration", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text("Configuration",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 16),
             _buildFormatSelector(),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Appareils à proximité", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                if (_isSearching) const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                const Text("Appareils à proximité",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                if (_isSearching)
+                  const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
               ],
             ),
             const SizedBox(height: 16),
@@ -67,40 +74,45 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Column(
-        children: [
-          _buildFormatOption("Format 58mm (Standard)", true),
-          const Divider(),
-          _buildFormatOption("Format 80mm (Large)", false),
-        ],
+      child: RadioGroup<String>(
+        groupValue: "58mm",
+        onChanged: (_) {},
+        child: Column(
+          children: [
+            _buildFormatOption("Format 58mm (Standard)", "58mm"),
+            const Divider(),
+            _buildFormatOption("Format 80mm (Large)", "80mm"),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFormatOption(String label, bool isSelected) {
+  Widget _buildFormatOption(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label),
-        Radio(value: isSelected, groupValue: true, onChanged: (v) {}, activeColor: AppColors.primary),
+        Radio<String>(value: value, activeColor: AppColors.primary),
       ],
     );
   }
 
   Widget _buildDeviceList() {
     if (_devices.isEmpty) {
-      return const Center(child: Text("Aucun appareil trouvé. Lance une recherche."));
+      return const Center(
+          child: Text("Aucun appareil trouvé. Lance une recherche."));
     }
 
     return ListView.builder(
       itemCount: _devices.length,
-      itemBuilder: (context, index) {
+      itemBuilder: (itemCtx, index) {
         final device = _devices[index];
         final isConnected = _connectedDevice?.address == device.address;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
-            leading: const Icon(Icons.print_rounded, color: AppColors.primary),
+            leading: Icon(Icons.print_rounded, color: AppColors.primary),
             title: Text(device.name ?? "Imprimante inconnue"),
             subtitle: Text(isConnected ? "Connecté" : "Non connecté"),
             trailing: TextButton(
@@ -132,9 +144,15 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
       height: 60,
       child: ElevatedButton.icon(
         onPressed: _isSearching ? null : _scanDevices,
-        icon: Icon(_isSearching ? Icons.stop_rounded : Icons.search_rounded, color: Colors.white),
-        label: Text(_isSearching ? "Recherche..." : "Rechercher une imprimante", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        icon: Icon(_isSearching ? Icons.stop_rounded : Icons.search_rounded,
+            color: Colors.white),
+        label: Text(_isSearching ? "Recherche..." : "Rechercher une imprimante",
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16))),
       ),
     );
   }

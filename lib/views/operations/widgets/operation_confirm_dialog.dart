@@ -43,11 +43,12 @@ class OperationConfirmDialog extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppTokens.primary50,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.help_outline_rounded, color: AppTokens.primary500, size: 24),
+            child: Icon(Icons.help_outline_rounded,
+                color: AppTokens.primary500, size: 24),
           ),
           const SizedBox(width: 12),
           Text(
@@ -64,34 +65,54 @@ class OperationConfirmDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ReceiptInfoLine(label: 'Opération', value: TransactionModel.typeDisplayName(type), isBold: true),
+          ReceiptInfoLine(
+              label: 'Opération',
+              value: TransactionModel.typeDisplayName(type),
+              isBold: true),
           if (simDisplayName != null && simPhone != null)
-            ReceiptInfoLine(label: 'Compte / SIM', value: '$simDisplayName ($simPhone) • Solde: $simBalanceFormatted'),
-          ReceiptInfoLine(label: 'Numéro Client', value: '$clientPhone ($clientName)'),
-          ReceiptInfoLine(label: 'Montant', value: amountFormatted, valueColor: AppTokens.primary500, isBold: true),
+            ReceiptInfoLine(
+                label: 'Compte / SIM',
+                value:
+                    '$simDisplayName ($simPhone) • Solde: $simBalanceFormatted'),
+          ReceiptInfoLine(
+              label: 'Numéro Client', value: '$clientPhone ($clientName)'),
+          ReceiptInfoLine(
+              label: 'Montant',
+              value: amountFormatted,
+              valueColor: AppTokens.primary500,
+              isBold: true),
           const ReceiptInfoLine(label: 'Frais', value: '0 F'),
-          ReceiptInfoLine(label: 'Commission estimée', value: '+$commissionFormatted', valueColor: AppTokens.secondary500, isBold: true),
+          ReceiptInfoLine(
+              label: 'Commission estimée',
+              value: '+$commissionFormatted',
+              valueColor: AppTokens.secondary500,
+              isBold: true),
         ],
       ),
       actions: [
         TextButton(
           onPressed: isSubmitting ? null : onCancel,
-          child: const Text('MODIFIER', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
+          child: const Text('MODIFIER',
+              style: TextStyle(
+                  fontWeight: FontWeight.w700, color: Color(0xFF64748B))),
         ),
         ElevatedButton(
           onPressed: isSubmitting ? null : onConfirm,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTokens.primary500,
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           child: isSubmitting
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
                 )
-              : const Text('CONFIRMER', style: TextStyle(fontWeight: FontWeight.w700)),
+              : const Text('CONFIRMER',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
         ),
       ],
     );

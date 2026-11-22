@@ -34,7 +34,9 @@ class _SignUpPageState extends State<SignUpPage> {
       _passwordError = password.isEmpty ? "Mot de passe requis" : null;
     });
 
-    if (_businessError != null || _emailError != null || _passwordError != null) {
+    if (_businessError != null ||
+        _emailError != null ||
+        _passwordError != null) {
       return;
     }
 
@@ -79,7 +81,8 @@ class _SignUpPageState extends State<SignUpPage> {
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20,
-            color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+            color:
+                isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -105,14 +108,18 @@ class _SignUpPageState extends State<SignUpPage> {
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
-                          color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                          color: isDark
+                              ? AppTokens.darkTextPrimary
+                              : AppTokens.lightTextPrimary,
                         ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         "Gérez vos opérations et visualisez vos profits en temps réel.",
                         style: TextStyle(
-                          color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                          color: isDark
+                              ? AppTokens.darkTextSecondary
+                              : AppTokens.lightTextSecondary,
                           fontSize: 13.5,
                         ),
                       ),
@@ -126,7 +133,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         textInputAction: TextInputAction.next,
                         errorText: _businessError,
                         onChanged: (_) {
-                          if (_businessError != null) setState(() => _businessError = null);
+                          if (_businessError != null) {
+                            setState(() => _businessError = null);
+                          }
                         },
                       ),
                       const SizedBox(height: AppTokens.space16),
@@ -148,7 +157,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         textInputAction: TextInputAction.next,
                         errorText: _emailError,
                         onChanged: (_) {
-                          if (_emailError != null) setState(() => _emailError = null);
+                          if (_emailError != null) {
+                            setState(() => _emailError = null);
+                          }
                         },
                       ),
                       const SizedBox(height: AppTokens.space16),
@@ -163,7 +174,9 @@ class _SignUpPageState extends State<SignUpPage> {
                         errorText: _passwordError,
                         onSubmitted: (_) => _handleSignUp(),
                         onChanged: (_) {
-                          if (_passwordError != null) setState(() => _passwordError = null);
+                          if (_passwordError != null) {
+                            setState(() => _passwordError = null);
+                          }
                         },
                       ),
                       const SizedBox(height: AppTokens.space28),
@@ -183,19 +196,25 @@ class _SignUpPageState extends State<SignUpPage> {
                             Text(
                               "Déjà un compte ? ",
                               style: TextStyle(
-                                color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                                color: isDark
+                                    ? AppTokens.darkTextSecondary
+                                    : AppTokens.lightTextSecondary,
                                 fontSize: 13.5,
                               ),
                             ),
                             InkWell(
                               onTap: () => Navigator.pop(context),
-                              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                              borderRadius:
+                                  BorderRadius.circular(AppTokens.radiusSm),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 4, vertical: 2),
                                 child: Text(
                                   "Se connecter",
                                   style: TextStyle(
-                                    color: isDark ? AppTokens.primary300 : AppTokens.primary600,
+                                    color: isDark
+                                        ? AppTokens.primary300
+                                        : AppTokens.primary600,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 13.5,
                                   ),

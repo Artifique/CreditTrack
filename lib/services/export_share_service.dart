@@ -20,7 +20,8 @@ class ExportShareService {
     await Printing.sharePdf(bytes: bytes, filename: filename);
   }
 
-  static Future<void> sharePdf(File file, {String subject = 'CreditTrak'}) async {
+  static Future<void> sharePdf(File file,
+      {String subject = 'CreditTrak'}) async {
     await Share.shareXFiles(
       [XFile(file.path, mimeType: 'application/pdf', name: _fileName(file))],
       subject: subject,

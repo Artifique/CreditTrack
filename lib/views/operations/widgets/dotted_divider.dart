@@ -19,7 +19,8 @@ class DottedDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final strokeColor = color ?? (isDark ? AppTokens.darkBorder : AppTokens.lightBorder);
+    final strokeColor =
+        color ?? (isDark ? AppTokens.darkBorder : AppTokens.lightBorder);
 
     return LayoutBuilder(
       builder: (context, constraints) {

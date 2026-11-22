@@ -1,12 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'app_color_palette.dart';
 import 'tokens.dart';
 
 /// Legacy AppColors aliased to AppTokens for backwards compatibility
 class AppColors {
-  static const Color primary = AppTokens.primary500;
-  static const Color primaryDark = AppTokens.primary600;
-  static const Color secondary = AppTokens.secondary500;
+  static Color get primary => AppTokens.primary500;
+  static Color get primaryDark => AppTokens.primary600;
+  static Color get secondary => AppTokens.secondary500;
   static const Color background = AppTokens.lightBg;
   static const Color surface = AppTokens.lightSurface;
   static const Color textPrimary = AppTokens.lightTextPrimary;
@@ -19,30 +20,36 @@ class AppColors {
   static const Color info = AppTokens.info;
 
   // Gradients
-  static const LinearGradient primaryGradient = AppTokens.primaryGradient;
-  static const LinearGradient secondaryGradient = AppTokens.secondaryGradient;
-  static const LinearGradient cardGradientUV = AppTokens.cardGradientUV;
-  static const LinearGradient cardGradientCredit = AppTokens.cardGradientCredit;
+  static LinearGradient get primaryGradient => AppTokens.primaryGradient;
+  static LinearGradient get secondaryGradient => AppTokens.secondaryGradient;
+  static LinearGradient get cardGradientUV => AppTokens.cardGradientUV;
+  static LinearGradient get cardGradientCredit => AppTokens.cardGradientCredit;
+  static LinearGradient get cardGradientCash => AppTokens.cardGradientCash;
 }
 
 class AppTheme {
-  static ThemeData get lightTheme {
-    final textTheme = AppTokens.textTheme(AppTokens.lightTextPrimary, AppTokens.lightTextSecondary);
+  static ThemeData get lightTheme => buildLightTheme();
+  static ThemeData get darkTheme => buildDarkTheme();
+
+  static ThemeData buildLightTheme([AppColorPalette? palette]) {
+    final p = palette ?? AppTokens.currentPalette;
+    final textTheme = AppTokens.textTheme(
+        AppTokens.lightTextPrimary, AppTokens.lightTextSecondary);
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppTokens.lightBg,
-      colorScheme: const ColorScheme(
+      colorScheme: ColorScheme(
         brightness: Brightness.light,
-        primary: AppTokens.primary500,
+        primary: p.primary500,
         onPrimary: Colors.white,
-        primaryContainer: AppTokens.primary50,
-        onPrimaryContainer: AppTokens.primary800,
-        secondary: AppTokens.secondary500,
+        primaryContainer: p.primary50,
+        onPrimaryContainer: p.primary800,
+        secondary: p.secondary500,
         onSecondary: Colors.white,
-        secondaryContainer: AppTokens.secondary50,
-        onSecondaryContainer: AppTokens.secondary700,
+        secondaryContainer: p.secondary50,
+        onSecondaryContainer: p.secondary700,
         error: AppTokens.error,
         onError: Colors.white,
         errorContainer: AppTokens.errorBg,
@@ -78,7 +85,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppTokens.lightSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: const TextStyle(
           color: AppTokens.lightTextTertiary,
           fontSize: 14,
@@ -86,15 +94,17 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-          borderSide: const BorderSide(color: AppTokens.lightBorder, width: 1.2),
+          borderSide:
+              const BorderSide(color: AppTokens.lightBorder, width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-          borderSide: const BorderSide(color: AppTokens.lightBorder, width: 1.2),
+          borderSide:
+              const BorderSide(color: AppTokens.lightBorder, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-          borderSide: const BorderSide(color: AppTokens.primary500, width: 2),
+          borderSide: BorderSide(color: p.primary500, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -107,20 +117,21 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTokens.primary500,
+          backgroundColor: p.primary500,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          minimumSize: const Size(AppTokens.minTouchTarget, AppTokens.minTouchTarget),
+          minimumSize:
+              const Size(AppTokens.minTouchTarget, AppTokens.minTouchTarget),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTokens.radiusMd),
           ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: AppTokens.lightSurface,
-        selectedItemColor: AppTokens.primary500,
+        selectedItemColor: p.primary500,
         unselectedItemColor: AppTokens.lightTextTertiary,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -137,23 +148,25 @@ class AppTheme {
     );
   }
 
-  static ThemeData get darkTheme {
-    final textTheme = AppTokens.textTheme(AppTokens.darkTextPrimary, AppTokens.darkTextSecondary);
+  static ThemeData buildDarkTheme([AppColorPalette? palette]) {
+    final p = palette ?? AppTokens.currentPalette;
+    final textTheme = AppTokens.textTheme(
+        AppTokens.darkTextPrimary, AppTokens.darkTextSecondary);
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppTokens.darkBg,
-      colorScheme: const ColorScheme(
+      colorScheme: ColorScheme(
         brightness: Brightness.dark,
-        primary: AppTokens.primary400,
-        onPrimary: Color(0xFF0F172A),
-        primaryContainer: AppTokens.primary900,
-        onPrimaryContainer: AppTokens.primary100,
-        secondary: AppTokens.secondary400,
-        onSecondary: Color(0xFF064E3B),
-        secondaryContainer: Color(0xFF064E3B),
-        onSecondaryContainer: AppTokens.secondary100,
+        primary: p.primary400,
+        onPrimary: const Color(0xFF0F172A),
+        primaryContainer: p.primary900,
+        onPrimaryContainer: p.primary100,
+        secondary: p.secondary400,
+        onSecondary: const Color(0xFF064E3B),
+        secondaryContainer: const Color(0xFF064E3B),
+        onSecondaryContainer: p.secondary100,
         error: AppTokens.error,
         onError: Colors.white,
         errorContainer: AppTokens.darkErrorBg,
@@ -189,7 +202,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppTokens.darkBgSubtle,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: const TextStyle(
           color: AppTokens.darkTextTertiary,
           fontSize: 14,
@@ -205,7 +219,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-          borderSide: const BorderSide(color: AppTokens.primary400, width: 2),
+          borderSide: BorderSide(color: p.primary400, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -218,20 +232,21 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTokens.primary500,
+          backgroundColor: p.primary500,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          minimumSize: const Size(AppTokens.minTouchTarget, AppTokens.minTouchTarget),
+          minimumSize:
+              const Size(AppTokens.minTouchTarget, AppTokens.minTouchTarget),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTokens.radiusMd),
           ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: AppTokens.darkSurface,
-        selectedItemColor: AppTokens.primary400,
+        selectedItemColor: p.primary400,
         unselectedItemColor: AppTokens.darkTextTertiary,
         type: BottomNavigationBarType.fixed,
         elevation: 8,

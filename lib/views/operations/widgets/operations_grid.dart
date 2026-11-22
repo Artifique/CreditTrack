@@ -17,8 +17,10 @@ class OperationGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
-      color: Colors.white,
+      color: isDark ? const Color(0xFF1E293B) : Colors.white,
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         onTap: onTap,
@@ -28,14 +30,18 @@ class OperationGridCard extends StatelessWidget {
         child: Container(
           height: 104,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppTokens.primary500, width: 1.0),
-            boxShadow: const [
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : AppTokens.primary500,
+              width: 1.0,
+            ),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x06000000),
+                color:
+                    isDark ? const Color(0x18000000) : const Color(0x06000000),
                 blurRadius: 4,
-                offset: Offset(0, 2),
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -47,8 +53,10 @@ class OperationGridCard extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFF7ED),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0x33FF6600)
+                      : const Color(0xFFFFF7ED),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -65,10 +73,10 @@ class OperationGridCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87,
+                  color: isDark ? Colors.white : Colors.black87,
                   letterSpacing: -0.2,
                 ),
               ),
@@ -134,7 +142,8 @@ class OperationsGrid extends StatelessWidget {
                   key: const ValueKey('op_transfert_credit'),
                   title: 'TRANSFERT',
                   icon: Icons.send_rounded,
-                  onTap: () => onSelectOperation(TransactionType.transfertCredit),
+                  onTap: () =>
+                      onSelectOperation(TransactionType.transfertCredit),
                 ),
               ),
               const SizedBox(width: 10),
@@ -205,7 +214,8 @@ class OperationsGrid extends StatelessWidget {
                 key: const ValueKey('op_transfert_profit'),
                 title: 'TRANSFERT PROFIT',
                 icon: Icons.trending_up_rounded,
-                onTap: () => onSelectOperation(TransactionType.transfertProfitUv),
+                onTap: () =>
+                    onSelectOperation(TransactionType.transfertProfitUv),
               ),
             ),
           ],

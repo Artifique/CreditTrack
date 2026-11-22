@@ -94,7 +94,9 @@ class _LoginPageState extends State<LoginPage> {
                         textInputAction: TextInputAction.next,
                         errorText: _emailError,
                         onChanged: (_) {
-                          if (_emailError != null) setState(() => _emailError = null);
+                          if (_emailError != null) {
+                            setState(() => _emailError = null);
+                          }
                         },
                       ),
                       const SizedBox(height: AppTokens.space20),
@@ -109,7 +111,9 @@ class _LoginPageState extends State<LoginPage> {
                         errorText: _passwordError,
                         onSubmitted: (_) => _handleSignIn(),
                         onChanged: (_) {
-                          if (_passwordError != null) setState(() => _passwordError = null);
+                          if (_passwordError != null) {
+                            setState(() => _passwordError = null);
+                          }
                         },
                       ),
                       const SizedBox(height: AppTokens.space32),
@@ -158,7 +162,8 @@ class _LoginPageState extends State<LoginPage> {
                     gradient: AppTokens.primaryGradient,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 44),
+                  child: const Icon(Icons.flash_on_rounded,
+                      color: Colors.white, size: 44),
                 );
               },
             ),
@@ -171,7 +176,8 @@ class _LoginPageState extends State<LoginPage> {
             fontSize: 26,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.5,
-            color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+            color:
+                isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
           ),
         ),
         const SizedBox(height: 4),
@@ -179,7 +185,9 @@ class _LoginPageState extends State<LoginPage> {
           "Gérez vos transferts & crédits avec sérénité",
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+            color: isDark
+                ? AppTokens.darkTextSecondary
+                : AppTokens.lightTextSecondary,
             fontSize: 13.5,
           ),
         ),
@@ -194,7 +202,9 @@ class _LoginPageState extends State<LoginPage> {
         Text(
           "Nouveau sur la plateforme ? ",
           style: TextStyle(
-            color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+            color: isDark
+                ? AppTokens.darkTextSecondary
+                : AppTokens.lightTextSecondary,
             fontSize: 13.5,
           ),
         ),

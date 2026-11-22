@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../../core/app_formatters.dart';
 import '../../core/tokens.dart';
 import '../../core/user_feedback.dart';
 import '../../controllers/operation_phone_controller.dart';
@@ -25,7 +26,8 @@ class _ReportsPageState extends State<ReportsPage> {
   Future<void> _exportPdf(List<TransactionModel> txs) async {
     if (txs.isEmpty) {
       if (!mounted) return;
-      UserFeedback.showToast(context, 'Aucune donnée à exporter.', type: AppToastType.warning);
+      UserFeedback.showToast(context, 'Aucune donnée à exporter.',
+          type: AppToastType.warning);
       return;
     }
     setState(() => _exportingPdf = true);
@@ -40,7 +42,8 @@ class _ReportsPageState extends State<ReportsPage> {
         ),
       );
       if (!mounted) return;
-      await ExportShareService.sharePdfBytes(built.bytes, filename: built.filename);
+      await ExportShareService.sharePdfBytes(built.bytes,
+          filename: built.filename);
       if (!mounted) return;
       UserFeedback.showSuccessToast(context, 'Rapport exporté avec succès !');
     } catch (e) {
@@ -75,15 +78,24 @@ class _ReportsPageState extends State<ReportsPage> {
           builder: (context, snapshot) {
             if (snapshot.hasError) {
               return Scaffold(
-                appBar: AppBar(title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)), centerTitle: true),
+                appBar: AppBar(
+                    title: const Text("Analyses & Rapports",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 17)),
+                    centerTitle: true),
                 body: Center(
-                  child: Text("Erreur de chargement: ${snapshot.error}", style: const TextStyle(color: Colors.red)),
+                  child: Text("Erreur de chargement: ${snapshot.error}",
+                      style: const TextStyle(color: Colors.red)),
                 ),
               );
             }
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Scaffold(
-                appBar: AppBar(title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)), centerTitle: true),
+                appBar: AppBar(
+                    title: const Text("Analyses & Rapports",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 17)),
+                    centerTitle: true),
                 body: const Center(
                   child: CircularProgressIndicator(),
                 ),
@@ -92,12 +104,17 @@ class _ReportsPageState extends State<ReportsPage> {
             final txs = snapshot.data ?? [];
             return Scaffold(
               appBar: AppBar(
-                title: const Text("Analyses & Rapports", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
+                title: const Text("Analyses & Rapports",
+                    style:
+                        TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
                 centerTitle: true,
                 actions: [
                   IconButton(
-                    icon: _exportingPdf 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    icon: _exportingPdf
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.picture_as_pdf_rounded),
                     tooltip: 'Exporter en PDF',
                     onPressed: _exportingPdf ? null : () => _exportPdf(txs),
@@ -108,7 +125,8 @@ class _ReportsPageState extends State<ReportsPage> {
               body: SingleChildScrollView(
                 child: ResponsiveContainer(
                   maxWidth: 960,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -167,7 +185,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Widget _buildTotalProfitCard(List<TransactionModel> txs) {
     final total = txs.fold<double>(0, (sum, tx) => sum + tx.commission);
-    final money = NumberFormat('#,##0', 'fr_FR');
 
     return Container(
       width: double.infinity,
@@ -193,7 +210,10 @@ class _ReportsPageState extends State<ReportsPage> {
             ),
             child: const Text(
               "Commissions Totales Générées",
-              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
             ),
           ),
           const SizedBox(height: 14),
@@ -203,7 +223,7 @@ class _ReportsPageState extends State<ReportsPage> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                money.format(total.round()),
+                AppFormatters.formatAmount(total.round()),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 34,
@@ -214,7 +234,10 @@ class _ReportsPageState extends State<ReportsPage> {
               const SizedBox(width: 6),
               const Text(
                 "CFA",
-                style: TextStyle(color: Colors.white70, fontSize: 16, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -228,11 +251,15 @@ class _ReportsPageState extends State<ReportsPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.auto_graph_rounded, color: AppTokens.secondary, size: 16),
+                Icon(Icons.auto_graph_rounded,
+                    color: AppTokens.secondary, size: 16),
                 const SizedBox(width: 6),
                 Text(
                   "${txs.length} transactions analysées",
-                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -242,13 +269,17 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildCategoryDistribution(BuildContext context, List<TransactionModel> txs, bool isDark) {
-    final credit = txs.where((tx) => tx.category == TransactionCategory.CREDIT).fold<double>(0, (s, tx) => s + tx.commission);
-    final uv = txs.where((tx) => tx.category == TransactionCategory.UV).fold<double>(0, (s, tx) => s + tx.commission);
+  Widget _buildCategoryDistribution(
+      BuildContext context, List<TransactionModel> txs, bool isDark) {
+    final credit = txs
+        .where((tx) => tx.category == TransactionCategory.CREDIT)
+        .fold<double>(0, (s, tx) => s + tx.commission);
+    final uv = txs
+        .where((tx) => tx.category == TransactionCategory.UV)
+        .fold<double>(0, (s, tx) => s + tx.commission);
     final total = (credit + uv) == 0 ? 1 : (credit + uv);
     final creditPct = (credit / total) * 100;
     final uvPct = (uv / total) * 100;
-    final money = NumberFormat('#,##0', 'fr_FR');
 
     return AppCard(
       variant: AppCardVariant.elevated,
@@ -269,14 +300,20 @@ class _ReportsPageState extends State<ReportsPage> {
                       value: creditPct > 0 ? creditPct : 0.01,
                       title: '${creditPct.toStringAsFixed(0)}%',
                       radius: 46,
-                      titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                      titleStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12),
                     ),
                     PieChartSectionData(
                       color: AppTokens.secondary500,
                       value: uvPct > 0 ? uvPct : 0.01,
                       title: '${uvPct.toStringAsFixed(0)}%',
                       radius: 46,
-                      titleStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+                      titleStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12),
                     ),
                   ],
                 ),
@@ -293,14 +330,14 @@ class _ReportsPageState extends State<ReportsPage> {
                 _LegendItem(
                   color: AppTokens.primary500,
                   label: "Crédit",
-                  value: "${money.format(credit.round())} F",
+                  value: AppFormatters.formatMoneyShort(credit.round()),
                   isDark: isDark,
                 ),
                 const SizedBox(height: 16),
                 _LegendItem(
                   color: AppTokens.secondary500,
                   label: "UV (MM)",
-                  value: "${money.format(uv.round())} F",
+                  value: AppFormatters.formatMoneyShort(uv.round()),
                   isDark: isDark,
                 ),
               ],
@@ -311,21 +348,21 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildKpiRow(BuildContext context, List<TransactionModel> txs, bool isDark) {
+  Widget _buildKpiRow(
+      BuildContext context, List<TransactionModel> txs, bool isDark) {
     final uvProfit = txs
         .where((tx) => tx.category == TransactionCategory.UV)
         .fold<double>(0, (sum, tx) => sum + tx.commission);
     final creditProfit = txs
         .where((tx) => tx.category == TransactionCategory.CREDIT)
         .fold<double>(0, (sum, tx) => sum + tx.commission);
-    final money = NumberFormat('#,##0', 'fr_FR');
 
     return Row(
       children: [
         Expanded(
           child: _KpiCard(
             title: "Bénéfice UV",
-            value: "${money.format(uvProfit.round())} F",
+            value: AppFormatters.formatMoneyShort(uvProfit.round()),
             icon: Icons.account_balance_wallet_rounded,
             color: AppTokens.secondary500,
             isDark: isDark,
@@ -335,7 +372,7 @@ class _ReportsPageState extends State<ReportsPage> {
         Expanded(
           child: _KpiCard(
             title: "Bénéfice Crédit",
-            value: "${money.format(creditProfit.round())} F",
+            value: AppFormatters.formatMoneyShort(creditProfit.round()),
             icon: Icons.phone_android_rounded,
             color: AppTokens.primary500,
             isDark: isDark,
@@ -355,10 +392,12 @@ class _ReportsPageState extends State<ReportsPage> {
     );
   }
 
-  Widget _buildWeeklyBarChart(BuildContext context, List<TransactionModel> txs, bool isDark) {
+  Widget _buildWeeklyBarChart(
+      BuildContext context, List<TransactionModel> txs, bool isDark) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final weekDays = List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
+    final weekDays =
+        List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
     final values = weekDays.map((day) {
       return txs
           .where((tx) =>
@@ -370,7 +409,6 @@ class _ReportsPageState extends State<ReportsPage> {
 
     final maxVal = values.fold<double>(0, (m, v) => v > m ? v : m);
     final double maxY = maxVal == 0 ? 500 : (maxVal * 1.35);
-    final money = NumberFormat('#,##0', 'fr_FR');
 
     // Total cette semaine
     final weekTotal = values.fold<double>(0, (s, v) => s + v);
@@ -395,7 +433,9 @@ class _ReportsPageState extends State<ReportsPage> {
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                      color: isDark
+                          ? AppTokens.darkTextPrimary
+                          : AppTokens.lightTextPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -403,30 +443,44 @@ class _ReportsPageState extends State<ReportsPage> {
                     "7 derniers jours",
                     style: TextStyle(
                       fontSize: 11.5,
-                      color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                      color: isDark
+                          ? AppTokens.darkTextTertiary
+                          : AppTokens.lightTextTertiary,
                     ),
                   ),
                 ],
               ),
               // Total semaine
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTokens.primary50,
+                  color: isDark ? const Color(0x33FF6600) : AppTokens.primary50,
                   borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                  border: Border.all(color: AppTokens.primary200, width: 1),
+                  border: Border.all(
+                    color:
+                        isDark ? const Color(0x55FF6600) : AppTokens.primary200,
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.trending_up_rounded, size: 14, color: AppTokens.primary600),
+                    Icon(
+                      Icons.trending_up_rounded,
+                      size: 14,
+                      color:
+                          isDark ? AppTokens.primary300 : AppTokens.primary600,
+                    ),
                     const SizedBox(width: 5),
                     Text(
-                      "${money.format(weekTotal.round())} F",
-                      style: const TextStyle(
+                      AppFormatters.formatMoneyShort(weekTotal.round()),
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppTokens.primary600,
+                        color: isDark
+                            ? AppTokens.primary300
+                            : AppTokens.primary600,
                       ),
                     ),
                   ],
@@ -445,24 +499,29 @@ class _ReportsPageState extends State<ReportsPage> {
                 barTouchData: BarTouchData(
                   enabled: true,
                   touchTooltipData: BarTouchTooltipData(
-                    tooltipBgColor: isDark ? AppTokens.darkSurface : Colors.white,
+                    tooltipBgColor:
+                        isDark ? AppTokens.darkSurface : Colors.white,
                     tooltipRoundedRadius: 8,
-                    tooltipPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    tooltipPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final day = weekDays[group.x];
-                      final label = DateFormat('EEE d MMM', 'fr_FR').format(day);
+                      final label =
+                          DateFormat('EEE d MMM', 'fr_FR').format(day);
                       final val = rod.toY;
                       return BarTooltipItem(
                         "$label\n",
                         TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                          color: isDark
+                              ? AppTokens.darkTextSecondary
+                              : AppTokens.lightTextSecondary,
                         ),
                         children: [
                           TextSpan(
-                            text: "${money.format(val.round())} F",
-                            style: const TextStyle(
+                            text: AppFormatters.formatMoneyShort(val.round()),
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                               color: AppTokens.primary500,
@@ -492,7 +551,9 @@ class _ReportsPageState extends State<ReportsPage> {
                       reservedSize: 28,
                       getTitlesWidget: (val, meta) {
                         final idx = val.toInt();
-                        if (idx < 0 || idx >= values.length) return const SizedBox.shrink();
+                        if (idx < 0 || idx >= values.length) {
+                          return const SizedBox.shrink();
+                        }
                         final v = values[idx];
                         if (v == 0) return const SizedBox.shrink();
                         // Afficher valeur compacte au-dessus de la barre
@@ -508,7 +569,9 @@ class _ReportsPageState extends State<ReportsPage> {
                               fontWeight: FontWeight.w700,
                               color: idx == bestIdx && maxVal > 0
                                   ? AppTokens.primary500
-                                  : (isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary),
+                                  : (isDark
+                                      ? AppTokens.darkTextTertiary
+                                      : AppTokens.lightTextTertiary),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -516,14 +579,17 @@ class _ReportsPageState extends State<ReportsPage> {
                       },
                     ),
                   ),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 42,
                       interval: maxY / 4,
                       getTitlesWidget: (value, meta) {
-                        if (value == 0 || value == maxY) return const SizedBox.shrink();
+                        if (value == 0 || value == maxY) {
+                          return const SizedBox.shrink();
+                        }
                         final label = value >= 1000
                             ? "${(value / 1000).toStringAsFixed(0)}k"
                             : value.toInt().toString();
@@ -531,7 +597,9 @@ class _ReportsPageState extends State<ReportsPage> {
                           label,
                           style: TextStyle(
                             fontSize: 9,
-                            color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+                            color: isDark
+                                ? AppTokens.darkTextTertiary
+                                : AppTokens.lightTextTertiary,
                           ),
                           textAlign: TextAlign.right,
                         );
@@ -544,10 +612,15 @@ class _ReportsPageState extends State<ReportsPage> {
                       reservedSize: 32,
                       getTitlesWidget: (val, meta) {
                         final idx = val.toInt();
-                        if (idx < 0 || idx >= weekDays.length) return const SizedBox.shrink();
+                        if (idx < 0 || idx >= weekDays.length) {
+                          return const SizedBox.shrink();
+                        }
                         final d = weekDays[idx];
                         final isToday = d.isAtSameMomentAs(today);
-                        final label = DateFormat('E', 'fr_FR').format(d).substring(0, 1).toUpperCase();
+                        final label = DateFormat('E', 'fr_FR')
+                            .format(d)
+                            .substring(0, 1)
+                            .toUpperCase();
                         return Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -556,10 +629,13 @@ class _ReportsPageState extends State<ReportsPage> {
                               label,
                               style: TextStyle(
                                 fontSize: 11,
-                                fontWeight: isToday ? FontWeight.w800 : FontWeight.w500,
+                                fontWeight:
+                                    isToday ? FontWeight.w800 : FontWeight.w500,
                                 color: isToday
                                     ? AppTokens.primary500
-                                    : (isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary),
+                                    : (isDark
+                                        ? AppTokens.darkTextTertiary
+                                        : AppTokens.lightTextTertiary),
                               ),
                             ),
                             if (isToday)
@@ -567,7 +643,7 @@ class _ReportsPageState extends State<ReportsPage> {
                                 margin: const EdgeInsets.only(top: 3),
                                 width: 4,
                                 height: 4,
-                                decoration: const BoxDecoration(
+                                decoration: BoxDecoration(
                                   color: AppTokens.primary500,
                                   shape: BoxShape.circle,
                                 ),
@@ -579,7 +655,13 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                 ),
                 borderData: FlBorderData(show: false),
-                barGroups: List.generate(7, (i) => _makeGroupData(i, values[i], i == bestIdx && maxVal > 0, weekDays[i].isAtSameMomentAs(today))),
+                barGroups: List.generate(
+                    7,
+                    (i) => _makeGroupData(
+                        i,
+                        values[i],
+                        i == bestIdx && maxVal > 0,
+                        weekDays[i].isAtSameMomentAs(today))),
               ),
             ),
           ),
@@ -588,22 +670,34 @@ class _ReportsPageState extends State<ReportsPage> {
           // Légende bas
           Row(
             children: [
-              Container(width: 10, height: 10, decoration: BoxDecoration(gradient: AppTokens.primaryGradient, borderRadius: BorderRadius.circular(2))),
+              Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                      gradient: AppTokens.primaryGradient,
+                      borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 6),
               Text(
                 "Commissions CFA",
-                style: TextStyle(fontSize: 11, color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: isDark
+                        ? AppTokens.darkTextTertiary
+                        : AppTokens.lightTextTertiary),
               ),
               const Spacer(),
               if (maxVal > 0) ...[
-                const Icon(Icons.emoji_events_rounded, size: 13, color: Color(0xFFF59E0B)),
+                const Icon(Icons.emoji_events_rounded,
+                    size: 13, color: Color(0xFFF59E0B)),
                 const SizedBox(width: 4),
                 Text(
-                  "Meilleur jour: ${DateFormat('E d MMM', 'fr_FR').format(weekDays[bestIdx])} — ${money.format(maxVal.round())} F",
+                  "Meilleur jour: ${DateFormat('E d MMM', 'fr_FR').format(weekDays[bestIdx])} — ${AppFormatters.formatMoneyShort(maxVal.round())}",
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                    color: isDark
+                        ? AppTokens.darkTextSecondary
+                        : AppTokens.lightTextSecondary,
                   ),
                 ),
               ],
@@ -621,7 +715,7 @@ class _ReportsPageState extends State<ReportsPage> {
         BarChartRodData(
           toY: y == 0 ? 0.01 : y,
           gradient: isBest || isToday
-              ? const LinearGradient(
+              ? LinearGradient(
                   colors: [AppTokens.primary500, AppTokens.primary600],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
@@ -677,7 +771,9 @@ class _LegendItem extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   fontSize: 12,
-                  color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+                  color: isDark
+                      ? AppTokens.darkTextSecondary
+                      : AppTokens.lightTextSecondary,
                 ),
               ),
               Text(
@@ -685,7 +781,9 @@ class _LegendItem extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 13.5,
-                  color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                  color: isDark
+                      ? AppTokens.darkTextPrimary
+                      : AppTokens.lightTextPrimary,
                 ),
               ),
             ],
@@ -732,7 +830,9 @@ class _KpiCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 11,
-              color: isDark ? AppTokens.darkTextSecondary : AppTokens.lightTextSecondary,
+              color: isDark
+                  ? AppTokens.darkTextSecondary
+                  : AppTokens.lightTextSecondary,
               fontWeight: FontWeight.w500,
             ),
             maxLines: 1,
@@ -744,7 +844,9 @@ class _KpiCard extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 13.5,
-              color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+              color: isDark
+                  ? AppTokens.darkTextPrimary
+                  : AppTokens.lightTextPrimary,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -754,5 +856,3 @@ class _KpiCard extends StatelessWidget {
     );
   }
 }
-
-

@@ -18,15 +18,17 @@ class OperationDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppTokens.primary500, AppTokens.primary600],
                   begin: Alignment.topLeft,
@@ -72,66 +74,131 @@ class OperationDrawer extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.home_rounded, color: AppTokens.primary500),
-                    title: const Text('Accueil / Nouvelle Opération', style: TextStyle(fontWeight: FontWeight.w700)),
+                    leading:
+                        Icon(Icons.home_rounded, color: AppTokens.primary500),
+                    title: Text(
+                      'Accueil / Nouvelle Opération',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       onHomeTap();
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.history_rounded, color: Colors.black87),
-                    title: const Text('Journal des transactions', style: TextStyle(fontWeight: FontWeight.w600)),
+                    leading: Icon(
+                      Icons.history_rounded,
+                      color: isDark
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF475569),
+                    ),
+                    title: Text(
+                      'Journal des transactions',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/history');
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.bar_chart_rounded, color: Colors.black87),
-                    title: const Text('Reporting & Commissions', style: TextStyle(fontWeight: FontWeight.w600)),
+                    leading: Icon(
+                      Icons.bar_chart_rounded,
+                      color: isDark
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF475569),
+                    ),
+                    title: Text(
+                      'Reporting & Commissions',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/reports');
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.sim_card_rounded, color: Colors.black87),
-                    title: const Text('Gestion des cartes SIM', style: TextStyle(fontWeight: FontWeight.w600)),
+                    leading: Icon(
+                      Icons.sim_card_rounded,
+                      color: isDark
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF475569),
+                    ),
+                    title: Text(
+                      'Gestion des cartes SIM',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/settings-sims');
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.settings_outlined, color: Colors.black87),
-                    title: const Text('Paramètres', style: TextStyle(fontWeight: FontWeight.w600)),
+                    leading: Icon(
+                      Icons.settings_outlined,
+                      color: isDark
+                          ? const Color(0xFFCBD5E1)
+                          : const Color(0xFF475569),
+                    ),
+                    title: Text(
+                      'Paramètres',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.pushNamed(context, '/settings');
                     },
                   ),
-                  const Divider(),
+                  Divider(
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE2E8F0),
+                  ),
                   ListTile(
-                    leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                    title: const Text('Déconnexion', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
+                    leading: const Icon(Icons.logout_rounded,
+                        color: Colors.redAccent),
+                    title: const Text('Déconnexion',
+                        style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w600)),
                     onTap: () async {
                       Navigator.pop(context);
                       await Supabase.instance.client.auth.signOut();
                       if (context.mounted) {
-                        Navigator.pushNamedAndRemoveUntil(context, '/login', (r) => false);
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/login', (r) => false);
                       }
                     },
                   ),
                 ],
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'Orange Money • CreditTrack Pro',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11),
+                style: TextStyle(
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF9CA3AF),
+                  fontSize: 11,
+                ),
               ),
             ),
           ],

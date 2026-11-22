@@ -30,10 +30,7 @@ class OperationPhoneController extends ChangeNotifier {
 
   /// À appeler après chargement du profil : liste des numéros de transfert enregistrés.
   Future<void> syncFromProfile(List<String> phones) async {
-    _phones = phones
-        .map((p) => p.trim())
-        .where((p) => p.isNotEmpty)
-        .toList();
+    _phones = phones.map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
 
     final prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey(_prefKey)) {

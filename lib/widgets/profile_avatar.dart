@@ -26,7 +26,8 @@ class ProfileAvatar extends StatelessWidget {
       }
     }
     if (name.isEmpty) name = 'CT';
-    final parts = name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts =
+        name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }

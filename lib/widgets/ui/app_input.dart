@@ -107,7 +107,9 @@ class _AppInputState extends State<AppInput> {
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
-                color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+                color: isDark
+                    ? AppTokens.darkTextPrimary
+                    : AppTokens.lightTextPrimary,
               ),
             ),
             if (widget.isRequired) ...[
@@ -136,7 +138,8 @@ class _AppInputState extends State<AppInput> {
       borderColor = isDark ? AppTokens.primary400 : AppTokens.primary500;
       borderWidth = 2.0;
     } else if (_isHovered && widget.enabled) {
-      borderColor = isDark ? AppTokens.darkBorderHover : AppTokens.lightBorderHover;
+      borderColor =
+          isDark ? AppTokens.darkBorderHover : AppTokens.lightBorderHover;
     } else {
       borderColor = isDark ? AppTokens.darkBorder : AppTokens.lightBorder;
     }
@@ -146,9 +149,12 @@ class _AppInputState extends State<AppInput> {
     if (widget.isPassword) {
       effectiveSuffix = IconButton(
         icon: Icon(
-          _obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          _obscureText
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
           size: 20,
-          color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+          color:
+              isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
         ),
         onPressed: () => setState(() => _obscureText = !_obscureText),
         splashRadius: 20,
@@ -158,7 +164,8 @@ class _AppInputState extends State<AppInput> {
         icon: Icon(
           widget.suffixIcon,
           size: 20,
-          color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+          color:
+              isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
         ),
         onPressed: widget.onSuffixTap,
         splashRadius: 20,
@@ -183,7 +190,9 @@ class _AppInputState extends State<AppInput> {
           boxShadow: _isFocused && !hasError
               ? [
                   BoxShadow(
-                    color: (isDark ? AppTokens.primary400 : AppTokens.primary500).withValues(alpha: 0.15),
+                    color:
+                        (isDark ? AppTokens.primary400 : AppTokens.primary500)
+                            .withValues(alpha: 0.15),
                     blurRadius: 6,
                     spreadRadius: 2,
                   ),
@@ -205,7 +214,8 @@ class _AppInputState extends State<AppInput> {
           minLines: widget.minLines,
           style: TextStyle(
             fontSize: 14.5,
-            color: isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
+            color:
+                isDark ? AppTokens.darkTextPrimary : AppTokens.lightTextPrimary,
             fontWeight: FontWeight.w400,
           ),
           cursorColor: isDark ? AppTokens.primary400 : AppTokens.primary500,
@@ -214,7 +224,9 @@ class _AppInputState extends State<AppInput> {
             hintText: widget.hintText,
             hintStyle: TextStyle(
               fontSize: 14,
-              color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+              color: isDark
+                  ? AppTokens.darkTextTertiary
+                  : AppTokens.lightTextTertiary,
               fontWeight: FontWeight.w400,
             ),
             prefixIcon: widget.prefixIcon != null
@@ -223,11 +235,14 @@ class _AppInputState extends State<AppInput> {
                     size: 20,
                     color: _isFocused
                         ? (isDark ? AppTokens.primary400 : AppTokens.primary500)
-                        : (isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary),
+                        : (isDark
+                            ? AppTokens.darkTextTertiary
+                            : AppTokens.lightTextTertiary),
                   )
                 : widget.prefix,
             suffixIcon: effectiveSuffix,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -250,7 +265,8 @@ class _AppInputState extends State<AppInput> {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.error_outline_rounded, size: 14, color: AppTokens.error),
+              const Icon(Icons.error_outline_rounded,
+                  size: 14, color: AppTokens.error),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -269,7 +285,9 @@ class _AppInputState extends State<AppInput> {
           Text(
             widget.helperText!,
             style: TextStyle(
-              color: isDark ? AppTokens.darkTextTertiary : AppTokens.lightTextTertiary,
+              color: isDark
+                  ? AppTokens.darkTextTertiary
+                  : AppTokens.lightTextTertiary,
               fontSize: 12,
             ),
           ),

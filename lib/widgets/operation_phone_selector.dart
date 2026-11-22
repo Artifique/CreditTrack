@@ -35,14 +35,17 @@ class OperationPhoneSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)
+            ],
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
               isExpanded: true,
               value: c.selectedForFilter,
               hint: const Text("Tous les numéros"),
-              icon: const Icon(Icons.sim_card_rounded, color: AppColors.primary),
+              icon: Icon(Icons.sim_card_rounded, color: AppColors.primary),
               items: [
                 const DropdownMenuItem<String?>(
                   value: null,

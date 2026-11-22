@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../../controllers/transaction_controller.dart';
+import '../../../../core/app_formatters.dart';
 import '../../../../core/tokens.dart';
+import '../../../../core/user_feedback.dart';
+import '../../../../widgets/ui/app_toast.dart';
 
 /// Carte de saisie du numéro client avec autocomplétion intelligente
 /// basée sur l'historique complet des transactions.
@@ -22,7 +24,8 @@ class OperationPhoneInputCard extends StatefulWidget {
   });
 
   @override
-  State<OperationPhoneInputCard> createState() => _OperationPhoneInputCardState();
+  State<OperationPhoneInputCard> createState() =>
+      _OperationPhoneInputCardState();
 }
 
 class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
@@ -55,21 +58,13 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
     }
   }
 
-  String _formatPhoneDisplay(String phone) {
-    final digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.length == 9) {
-      return '${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 7)} ${digits.substring(7, 9)}';
-    } else if (digits.length == 8) {
-      return '${digits.substring(0, 2)} ${digits.substring(2, 4)} ${digits.substring(4, 6)} ${digits.substring(6, 8)}';
-    }
-    return phone;
-  }
+  String _formatPhoneDisplay(String phone) => AppFormatters.formatPhone(phone);
 
-  String _formatAmount(double amt) => NumberFormat('#,##0', 'fr_FR').format(amt);
+  String _formatAmount(double amt) => AppFormatters.formatAmount(amt);
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = AppTokens.primary500;
+    final primaryColor = AppTokens.primary500;
     final queryDigits = widget.controller.text.replaceAll(RegExp(r'\D'), '');
 
     // Filtrage des suggestions selon l'historique
@@ -81,20 +76,24 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
       filteredSuggestions = widget.recentSuggestions.take(3).toList();
     } else {
       // Si on commence à taper : filtrer par préfixe ou contenu
-      filteredSuggestions = widget.recentSuggestions.where((s) {
-        final pDigits = s.phone.replaceAll(RegExp(r'\D'), '');
-        final nameLower = s.clientName.toLowerCase();
-        return pDigits.startsWith(queryDigits) ||
-            pDigits.contains(queryDigits) ||
-            nameLower.contains(widget.controller.text.toLowerCase().trim());
-      }).take(4).toList();
+      filteredSuggestions = widget.recentSuggestions
+          .where((s) {
+            final pDigits = s.phone.replaceAll(RegExp(r'\D'), '');
+            final nameLower = s.clientName.toLowerCase();
+            return pDigits.startsWith(queryDigits) ||
+                pDigits.contains(queryDigits) ||
+                nameLower.contains(widget.controller.text.toLowerCase().trim());
+          })
+          .take(4)
+          .toList();
     }
 
     final bool showDropdown = !_hideSuggestions &&
         queryDigits.isNotEmpty &&
         filteredSuggestions.isNotEmpty &&
         !(filteredSuggestions.length == 1 &&
-            filteredSuggestions.first.phone.replaceAll(RegExp(r'\D'), '') == queryDigits);
+            filteredSuggestions.first.phone.replaceAll(RegExp(r'\D'), '') ==
+                queryDigits);
 
     final bool showRecentChips = !_hideSuggestions &&
         queryDigits.isEmpty &&
@@ -109,7 +108,9 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
             Text(
               'Numéro client',
               style: TextStyle(
-                color: widget.isDark ? const Color(0xFFCBD5E1) : const Color(0xFF334155),
+                color: widget.isDark
+                    ? const Color(0xFFCBD5E1)
+                    : const Color(0xFF334155),
                 fontSize: 14.5,
                 fontWeight: FontWeight.w700,
                 letterSpacing: -0.2,
@@ -118,7 +119,7 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
             if (widget.recentSuggestions.isNotEmpty && queryDigits.isEmpty)
               Text(
                 '${widget.recentSuggestions.length} clients dans l\'historique',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w500,
                   color: AppTokens.primary500,
@@ -129,26 +130,27 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-              width: 1.2,
+            color: widget.isDark
+                ? const Color(0xFF1E293B)
+                : const Color(0xFFF8FAFC),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(8),
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x06000000),
-                blurRadius: 10,
-                offset: Offset(0, 3),
+            border: Border(
+              bottom: BorderSide(
+                color: AppTokens.primary500,
+                width: 2.2,
               ),
-            ],
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              const Icon(
-                Icons.phone_android_rounded,
-                color: primaryColor,
+              Icon(
+                Icons.sim_card_outlined,
+                color: widget.isDark
+                    ? const Color(0xFFCBD5E1)
+                    : const Color(0xFF475569),
                 size: 24,
               ),
               const SizedBox(width: 14),
@@ -157,17 +159,20 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                   controller: widget.controller,
                   keyboardType: TextInputType.phone,
                   style: TextStyle(
-                    color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                    color:
+                        widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.4,
                   ),
-                  decoration: const InputDecoration(
-                    hintText: '77 000 00 00',
+                  decoration: InputDecoration(
+                    hintText: 'Entrer le numéro',
                     hintStyle: TextStyle(
-                      color: Color(0xFF94A3B8),
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
+                      color: widget.isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w400,
                     ),
                     border: InputBorder.none,
                     isDense: true,
@@ -181,9 +186,10 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                   },
                 ),
               ),
-              if (widget.controller.text.isNotEmpty)
+              if (widget.controller.text.isNotEmpty) ...[
                 IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF94A3B8)),
+                  icon: const Icon(Icons.clear_rounded,
+                      size: 18, color: Color(0xFF94A3B8)),
                   onPressed: () {
                     widget.controller.clear();
                     setState(() => _hideSuggestions = false);
@@ -193,6 +199,26 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
+                const SizedBox(width: 10),
+              ],
+              IconButton(
+                icon: const Icon(
+                  Icons.camera_alt_outlined,
+                  color: Color(0xFF2563EB),
+                  size: 24,
+                ),
+                tooltip: 'Scanner le numéro',
+                onPressed: () {
+                  UserFeedback.showToast(
+                    context,
+                    'Scanner de numéro caméra bientôt disponible',
+                    type: AppToastType.info,
+                  );
+                },
+                splashRadius: 20,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
         ),
@@ -205,27 +231,34 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
             child: Row(
               children: widget.recentSuggestions.take(4).map<Widget>((s) {
                 final displayPhone = _formatPhoneDisplay(s.phone);
-                final displayName = s.clientName != 'Client direct' ? ' (${s.clientName})' : '';
+                final displayName =
+                    s.clientName != 'Client direct' ? ' (${s.clientName})' : '';
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    avatar: const Icon(Icons.history_rounded, size: 14, color: primaryColor),
+                    avatar: Icon(Icons.history_rounded,
+                        size: 14, color: primaryColor),
                     label: Text(
                       '$displayPhone$displayName',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                        color: widget.isDark
+                            ? Colors.white
+                            : const Color(0xFF1E293B),
                       ),
                     ),
                     backgroundColor: widget.isDark
                         ? const Color(0xFF1E293B)
                         : AppTokens.primary50,
                     side: BorderSide(
-                      color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFFFEDD5),
+                      color: widget.isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFFFEDD5),
                       width: 1,
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                     onPressed: () {
                       final formatted = _formatPhoneDisplay(s.phone);
                       widget.controller.text = formatted;
@@ -251,16 +284,22 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
               color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: widget.isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
               boxShadow: const [
-                BoxShadow(color: Color(0x0C000000), blurRadius: 10, offset: Offset(0, 4)),
+                BoxShadow(
+                    color: Color(0x0C000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 4)),
               ],
             ),
             child: Column(
               children: filteredSuggestions.map<Widget>((s) {
                 final formatted = _formatPhoneDisplay(s.phone);
-                final hasName = s.clientName.isNotEmpty && s.clientName != 'Client direct';
+                final hasName =
+                    s.clientName.isNotEmpty && s.clientName != 'Client direct';
 
                 return InkWell(
                   onTap: () {
@@ -274,16 +313,20 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                   },
                   borderRadius: BorderRadius.circular(14),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 11),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: AppTokens.primary50,
+                            color: widget.isDark
+                                ? const Color(0x33FF6600)
+                                : AppTokens.primary50,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.person_rounded, size: 16, color: primaryColor),
+                          child: Icon(Icons.person_rounded,
+                              size: 16, color: primaryColor),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -295,7 +338,9 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                                 style: TextStyle(
                                   fontSize: 14.5,
                                   fontWeight: FontWeight.w700,
-                                  color: widget.isDark ? Colors.white : const Color(0xFF1E293B),
+                                  color: widget.isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1E293B),
                                 ),
                               ),
                               if (hasName)
@@ -304,7 +349,9 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
-                                    color: widget.isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                    color: widget.isDark
+                                        ? const Color(0xFF94A3B8)
+                                        : const Color(0xFF64748B),
                                   ),
                                 ),
                             ],
@@ -312,17 +359,22 @@ class _OperationPhoneInputCardState extends State<OperationPhoneInputCard> {
                         ),
                         if (s.lastAmount > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppTokens.secondary50,
+                              color: widget.isDark
+                                  ? const Color(0x3310B981)
+                                  : AppTokens.secondary50,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               '${_formatAmount(s.lastAmount)} F',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w700,
-                                color: AppTokens.secondary500,
+                                color: widget.isDark
+                                    ? AppTokens.secondary300
+                                    : AppTokens.secondary500,
                               ),
                             ),
                           ),

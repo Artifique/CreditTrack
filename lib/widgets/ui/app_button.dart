@@ -91,7 +91,8 @@ class _AppButtonState extends State<AppButton> {
       case AppButtonVariant.primary:
         if (!isEnabled) {
           bgColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-          textColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+          textColor =
+              isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
         } else {
           bgColor = _isPressed
               ? AppTokens.primary700
@@ -106,7 +107,8 @@ class _AppButtonState extends State<AppButton> {
       case AppButtonVariant.secondary:
         if (!isEnabled) {
           bgColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
-          textColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+          textColor =
+              isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
         } else {
           bgColor = _isPressed
               ? AppTokens.secondary700
@@ -123,7 +125,8 @@ class _AppButtonState extends State<AppButton> {
             ? (isDark ? const Color(0x1AFFFFFF) : const Color(0x0F6366F1))
             : Colors.transparent;
         if (!isEnabled) {
-          textColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+          textColor =
+              isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
           borderSide = BorderSide(
             color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
             width: 1.2,
@@ -131,7 +134,9 @@ class _AppButtonState extends State<AppButton> {
         } else {
           textColor = isDark ? AppTokens.primary300 : AppTokens.primary600;
           borderSide = BorderSide(
-            color: _isHovered ? AppTokens.primary500 : (isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
+            color: _isHovered
+                ? AppTokens.primary500
+                : (isDark ? AppTokens.darkBorder : AppTokens.lightBorder),
             width: 1.5,
           );
         }
@@ -149,7 +154,8 @@ class _AppButtonState extends State<AppButton> {
       case AppButtonVariant.danger:
         if (!isEnabled) {
           bgColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
-          textColor = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+          textColor =
+              isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
         } else {
           bgColor = _isPressed
               ? const Color(0xFFB91C1C)
@@ -226,7 +232,9 @@ class _AppButtonState extends State<AppButton> {
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              border: borderSide != BorderSide.none ? Border.fromBorderSide(borderSide) : null,
+              border: borderSide != BorderSide.none
+                  ? Border.fromBorderSide(borderSide)
+                  : null,
               boxShadow: shadows,
             ),
             alignment: Alignment.center,

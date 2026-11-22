@@ -18,8 +18,6 @@ class OperationAmountInputCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = AppTokens.primary500;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -35,26 +33,24 @@ class OperationAmountInputCard extends StatelessWidget {
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
-              width: 1.2,
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(8),
             ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x06000000),
-                blurRadius: 10,
-                offset: Offset(0, 3),
+            border: Border(
+              bottom: BorderSide(
+                color: AppTokens.primary500,
+                width: 2.2,
               ),
-            ],
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.payments_outlined,
-                color: primaryColor,
+                color:
+                    isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
                 size: 24,
               ),
               const SizedBox(width: 14),
@@ -65,15 +61,17 @@ class OperationAmountInputCard extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   style: TextStyle(
                     color: isDark ? Colors.white : const Color(0xFF0F172A),
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
-                  decoration: const InputDecoration(
-                    hintText: '0',
+                  decoration: InputDecoration(
+                    hintText: 'Entrer le montant',
                     hintStyle: TextStyle(
-                      color: Color(0xFF0F172A),
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF64748B),
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w400,
                     ),
                     border: InputBorder.none,
                     isDense: true,
@@ -81,14 +79,28 @@ class OperationAmountInputCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (controller.text.isNotEmpty && controller.text != '0')
+              if (controller.text.isNotEmpty && controller.text != '0') ...[
                 IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 18, color: Color(0xFF94A3B8)),
+                  icon: const Icon(Icons.clear_rounded,
+                      size: 18, color: Color(0xFF94A3B8)),
                   onPressed: onClear,
                   splashRadius: 16,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
+                const SizedBox(width: 10),
+              ],
+              Text(
+                'CFA',
+                style: TextStyle(
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
             ],
           ),
         ),

@@ -77,9 +77,20 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
     final f = _parsePercentInput(_forfaitCtrl.text);
     final s = _parsePercentInput(_sewaCtrl.text);
     final tc = _parsePercentInput(_transfertCreditCtrl.text);
-    if (d == null || r == null || n == null || f == null || s == null || tc == null) return null;
-    if (d < 0 || r < 0 || n < 0 || f < 0 || s < 0 || tc < 0) return null;
-    if (d > 100 || r > 100 || n > 100 || f > 100 || s > 100 || tc > 100) return null;
+    if (d == null ||
+        r == null ||
+        n == null ||
+        f == null ||
+        s == null ||
+        tc == null) {
+      return null;
+    }
+    if (d < 0 || r < 0 || n < 0 || f < 0 || s < 0 || tc < 0) {
+      return null;
+    }
+    if (d > 100 || r > 100 || n > 100 || f > 100 || s > 100 || tc > 100) {
+      return null;
+    }
     return CommissionRates.fromPercentages(
       depotPct: d,
       retraitPct: r,
@@ -96,7 +107,8 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
     if (rates == null) {
       await UserFeedback.showErrorModal(
         context,
-        Exception('Vérifie les taux : nombres entre 0 et 100 % (virgule ou point décimal).'),
+        Exception(
+            'Vérifie les taux : nombres entre 0 et 100 % (virgule ou point décimal).'),
       );
       return;
     }
@@ -106,7 +118,9 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
       await _settingsController.updateCommissionRates(rates);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Taux enregistrés. Ils s’appliquent aux nouvelles transactions.')),
+        const SnackBar(
+            content: Text(
+                'Taux enregistrés. Ils s’appliquent aux nouvelles transactions.')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -136,7 +150,8 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Taux de commission', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Taux de commission',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: _loading
@@ -151,7 +166,8 @@ class _CommissionRatesPageState extends State<CommissionRatesPage> {
                     const Text(
                       'Saisis les pourcentages appliqués au montant de chaque opération. '
                       'Ex. dépôt historique : 0,14 signifie 0,14 %.',
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: TextStyle(
+                          fontSize: 13, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 24),
                     _pctField(

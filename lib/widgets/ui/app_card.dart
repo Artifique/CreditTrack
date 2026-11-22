@@ -49,7 +49,8 @@ class _AppCardState extends State<AppCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final radius = widget.borderRadius ?? BorderRadius.circular(AppTokens.radiusXl);
+    final radius =
+        widget.borderRadius ?? BorderRadius.circular(AppTokens.radiusXl);
 
     Color bgColor;
     BorderSide borderSide = BorderSide.none;
@@ -58,7 +59,8 @@ class _AppCardState extends State<AppCard> {
 
     switch (widget.variant) {
       case AppCardVariant.elevated:
-        bgColor = widget.customBgColor ?? (isDark ? AppTokens.darkSurface : AppTokens.lightSurface);
+        bgColor = widget.customBgColor ??
+            (isDark ? AppTokens.darkSurface : AppTokens.lightSurface);
         borderSide = BorderSide(
           color: isDark ? AppTokens.darkBorder : AppTokens.lightBorder,
           width: 1,
@@ -69,7 +71,8 @@ class _AppCardState extends State<AppCard> {
         break;
 
       case AppCardVariant.outlined:
-        bgColor = widget.customBgColor ?? (isDark ? AppTokens.darkBgSubtle : AppTokens.lightSurface);
+        bgColor = widget.customBgColor ??
+            (isDark ? AppTokens.darkBgSubtle : AppTokens.lightSurface);
         borderSide = BorderSide(
           color: _isHovered && widget.enableHover
               ? (isDark ? AppTokens.primary400 : AppTokens.primary500)
@@ -79,7 +82,8 @@ class _AppCardState extends State<AppCard> {
         break;
 
       case AppCardVariant.filled:
-        bgColor = widget.customBgColor ?? (isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle);
+        bgColor = widget.customBgColor ??
+            (isDark ? AppTokens.darkBgSubtle : AppTokens.lightBgSubtle);
         break;
 
       case AppCardVariant.gradient:
@@ -110,7 +114,9 @@ class _AppCardState extends State<AppCard> {
         color: bgColor,
         gradient: gradient,
         borderRadius: radius,
-        border: borderSide != BorderSide.none ? Border.fromBorderSide(borderSide) : null,
+        border: borderSide != BorderSide.none
+            ? Border.fromBorderSide(borderSide)
+            : null,
         boxShadow: shadows,
       ),
       child: widget.child,
@@ -123,8 +129,10 @@ class _AppCardState extends State<AppCard> {
         child: InkWell(
           onTap: widget.onTap,
           borderRadius: radius,
-          splashColor: (isDark ? Colors.white : AppTokens.primary500).withValues(alpha: 0.08),
-          highlightColor: (isDark ? Colors.white : AppTokens.primary500).withValues(alpha: 0.04),
+          splashColor: (isDark ? Colors.white : AppTokens.primary500)
+              .withValues(alpha: 0.08),
+          highlightColor: (isDark ? Colors.white : AppTokens.primary500)
+              .withValues(alpha: 0.04),
           child: cardContent,
         ),
       );

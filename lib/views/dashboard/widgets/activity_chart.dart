@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/app_formatters.dart';
 import '../../../core/theme.dart';
 import '../../../core/tokens.dart';
 import '../../../models/transaction_model.dart';
@@ -18,13 +18,17 @@ class ActivityChart extends StatelessWidget {
     final weekStart = today.subtract(const Duration(days: 6));
 
     final inWeek = transactions.where((tx) {
-      final d = DateTime(tx.createdAt.year, tx.createdAt.month, tx.createdAt.day);
+      final d =
+          DateTime(tx.createdAt.year, tx.createdAt.month, tx.createdAt.day);
       return !d.isBefore(weekStart) && !d.isAfter(today);
     }).toList();
 
-    final volUv = inWeek.where((t) => t.category == TransactionCategory.UV).fold<double>(0, (s, t) => s + t.amount);
-    final volCredit =
-        inWeek.where((t) => t.category == TransactionCategory.CREDIT).fold<double>(0, (s, t) => s + t.amount);
+    final volUv = inWeek
+        .where((t) => t.category == TransactionCategory.UV)
+        .fold<double>(0, (s, t) => s + t.amount);
+    final volCredit = inWeek
+        .where((t) => t.category == TransactionCategory.CREDIT)
+        .fold<double>(0, (s, t) => s + t.amount);
     final totalVol = volUv + volCredit;
     final nbOps = inWeek.length;
 
@@ -37,14 +41,17 @@ class ActivityChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(30),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10)
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Volume par catégorie',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: onSurface),
+            style: TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 15, color: onSurface),
           ),
           const SizedBox(height: 4),
           Text(
@@ -82,7 +89,8 @@ class ActivityChart extends StatelessWidget {
                                 PieChartSectionData(
                                   color: AppColors.secondary,
                                   value: volUv,
-                                  title: '${(100 * volUv / totalVol).toStringAsFixed(0)}%',
+                                  title:
+                                      '${(100 * volUv / totalVol).toStringAsFixed(0)}%',
                                   radius: 52,
                                   titleStyle: const TextStyle(
                                     color: Colors.white,
@@ -94,7 +102,8 @@ class ActivityChart extends StatelessWidget {
                                 PieChartSectionData(
                                   color: AppTokens.primary500,
                                   value: volCredit,
-                                  title: '${(100 * volCredit / totalVol).toStringAsFixed(0)}%',
+                                  title:
+                                      '${(100 * volCredit / totalVol).toStringAsFixed(0)}%',
                                   radius: 52,
                                   titleStyle: const TextStyle(
                                     color: Colors.white,
@@ -109,15 +118,17 @@ class ActivityChart extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              NumberFormat.compact(locale: 'fr_FR').format(totalVol),
+                              AppFormatters.formatCompact(totalVol),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
                                 color: onSurface,
                               ),
                             ),
-                            Text('CFA', style: TextStyle(fontSize: 11, color: variant)),
-                            Text('$nbOps op.', style: TextStyle(fontSize: 10, color: variant)),
+                            Text('CFA',
+                                style: TextStyle(fontSize: 11, color: variant)),
+                            Text('$nbOps op.',
+                                style: TextStyle(fontSize: 10, color: variant)),
                           ],
                         ),
                       ],
@@ -133,7 +144,7 @@ class ActivityChart extends StatelessWidget {
                         _LegendDot(
                           color: AppColors.secondary,
                           label: 'UV (Mobile Money)',
-                          value: '${NumberFormat('#,##0', 'fr_FR').format(volUv)} F',
+                          value: AppFormatters.formatMoneyShort(volUv),
                           textColor: onSurface,
                           subColor: variant,
                         ),
@@ -141,7 +152,7 @@ class ActivityChart extends StatelessWidget {
                         _LegendDot(
                           color: AppTokens.primary500,
                           label: 'Crédit',
-                          value: '${NumberFormat('#,##0', 'fr_FR').format(volCredit)} F',
+                          value: AppFormatters.formatMoneyShort(volCredit),
                           textColor: onSurface,
                           subColor: variant,
                         ),
@@ -189,7 +200,11 @@ class _LegendDot extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: TextStyle(fontSize: 11, color: subColor)),
-              Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor)),
+              Text(value,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: textColor)),
             ],
           ),
         ),

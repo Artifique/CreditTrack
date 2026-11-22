@@ -23,7 +23,8 @@ class ReceiptPage extends StatelessWidget {
 
   Future<void> _sharePdf(BuildContext context) async {
     try {
-      final file = await PdfService().generateReceipt(transaction, businessName);
+      final file =
+          await PdfService().generateReceipt(transaction, businessName);
       await ExportShareService.sharePdf(file);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -42,7 +43,8 @@ class ReceiptPage extends StatelessWidget {
 
   Future<void> _printSystem(BuildContext context) async {
     try {
-      final file = await PdfService().generateReceipt(transaction, businessName);
+      final file =
+          await PdfService().generateReceipt(transaction, businessName);
       final bytes = await file.readAsBytes();
       await Printing.layoutPdf(onLayout: (_) async => bytes);
     } catch (e, st) {
@@ -95,7 +97,9 @@ class ReceiptPage extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: surface,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 8)],
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x0D000000), blurRadius: 8)
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,23 +107,47 @@ class ReceiptPage extends StatelessWidget {
                     Center(
                       child: Text(
                         businessName.toUpperCase(),
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: onSurface),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: onSurface),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Divider(color: variant.withValues(alpha: 0.3)),
                     if (transaction.journalSeq != null)
-                      ReceiptInfoLine(label: 'N° journal', value: '#${transaction.journalSeq}'),
-                    ReceiptInfoLine(label: 'Type', value: TransactionModel.typeDisplayName(transaction.type)),
-                    ReceiptInfoLine(label: 'Catégorie', value: transaction.category.name),
-                    ReceiptInfoLine(label: 'Téléphone', value: transaction.clientPhone),
+                      ReceiptInfoLine(
+                          label: 'N° journal',
+                          value: '#${transaction.journalSeq}'),
+                    ReceiptInfoLine(
+                        label: 'Type',
+                        value:
+                            TransactionModel.typeDisplayName(transaction.type)),
+                    ReceiptInfoLine(
+                        label: 'Catégorie', value: transaction.category.name),
+                    ReceiptInfoLine(
+                        label: 'Téléphone', value: transaction.clientPhone),
                     ReceiptInfoLine(
                       label: 'Montant',
                       value: '${transaction.amount.toStringAsFixed(0)} CFA',
-                      valueColor: transaction.type.amountDisplayColor(onSurface),
+                      valueColor:
+                          transaction.type.amountDisplayColor(onSurface),
                       isBold: true,
                     ),
-                    ReceiptInfoLine(label: 'Commission', value: '${transaction.commission.toStringAsFixed(0)} CFA'),
+                    ReceiptInfoLine(
+                        label: 'Commission',
+                        value:
+                            '${transaction.commission.toStringAsFixed(0)} CFA'),
+                    ReceiptInfoLine(
+                        label: 'Solde Espèce avant',
+                        value:
+                            '${transaction.soldeEspeceAvant.toStringAsFixed(0)} CFA'),
+                    ReceiptInfoLine(
+                        label: 'Solde Espèce après',
+                        value:
+                            '${transaction.soldeEspeceApres.toStringAsFixed(0)} CFA',
+                        valueColor: const Color(0xFF10B981),
+                        isBold: true),
                     ReceiptInfoLine(label: 'Date', value: date),
                   ],
                 ),
@@ -159,13 +187,16 @@ class ReceiptPage extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false),
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context, '/dashboard', (route) => false),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTokens.primary500,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Terminer', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: const Text('Terminer',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
               ),
             ),
           ],

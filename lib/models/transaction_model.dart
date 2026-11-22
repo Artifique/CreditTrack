@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../controllers/cash_balance_controller.dart';
 import 'commission_rates_model.dart';
 
 enum TransactionType {
@@ -15,6 +16,7 @@ enum TransactionType {
   transfertCredit,
 }
 
+// ignore: constant_identifier_names
 enum TransactionCategory { UV, CREDIT }
 
 class TransactionModel {
@@ -24,14 +26,23 @@ class TransactionModel {
   final TransactionCategory category;
   final String clientName;
   final String clientPhone;
+
   /// Numéro de transfert de l'agent (parmi ceux enregistrés sur le profil).
   final String? merchantPhone;
   final double amount;
   final double commission;
   final double soldeApres;
   final double? soldeAvantRaw;
+
+  /// Solde Espèce universel (caisse physique) après l'opération (si persisté)
+  final double? soldeEspeceApresRaw;
+
+  /// Solde Espèce universel (caisse physique) avant l'opération (si persisté)
+  final double? soldeEspeceAvantRaw;
+
   final String? note;
   final DateTime createdAt;
+
   /// Numéro de journal lisible (reçu / audit), assigné côté serveur.
   final int? journalSeq;
 
@@ -54,6 +65,18 @@ class TransactionModel {
     }
   }
 
+  /// Solde Espèce (caisse physique) avant cette opération
+  double get soldeEspeceAvant {
+    if (soldeEspeceAvantRaw != null) return soldeEspeceAvantRaw!;
+    return CashBalanceController.instance.getCashBefore(this);
+  }
+
+  /// Solde Espèce (caisse physique) après cette opération
+  double get soldeEspeceApres {
+    if (soldeEspeceApresRaw != null) return soldeEspeceApresRaw!;
+    return CashBalanceController.instance.getCashAfter(this);
+  }
+
   TransactionModel({
     this.id,
     required this.userId,
@@ -66,6 +89,8 @@ class TransactionModel {
     required this.commission,
     required this.soldeApres,
     this.soldeAvantRaw,
+    this.soldeEspeceApresRaw,
+    this.soldeEspeceAvantRaw,
     this.note,
     required this.createdAt,
     this.journalSeq,
@@ -179,8 +204,17 @@ class TransactionModel {
       amount: asDouble(json['amount']),
       commission: asDouble(json['commission']),
       soldeApres: asDouble(json['solde_apres'] ?? json['balance_after']),
-      soldeAvantRaw: json['balance_before'] != null || json['solde_avant'] != null
-          ? asDouble(json['balance_before'] ?? json['solde_avant'])
+      soldeAvantRaw:
+          json['balance_before'] != null || json['solde_avant'] != null
+              ? asDouble(json['balance_before'] ?? json['solde_avant'])
+              : null,
+      soldeEspeceApresRaw: json['solde_espece_apres'] != null ||
+              json['solde_espece_after'] != null
+          ? asDouble(json['solde_espece_apres'] ?? json['solde_espece_after'])
+          : null,
+      soldeEspeceAvantRaw: json['solde_espece_avant'] != null ||
+              json['solde_espece_before'] != null
+          ? asDouble(json['solde_espece_avant'] ?? json['solde_espece_before'])
           : null,
       note: json['note'],
       createdAt: DateTime.parse(json['created_at']),
@@ -196,7 +230,8 @@ class TransactionModel {
       'category': category.name,
       'client_name': clientName,
       'client_phone': clientPhone,
-      if (merchantPhone != null && merchantPhone!.trim().isNotEmpty) 'merchant_phone': merchantPhone!.trim(),
+      if (merchantPhone != null && merchantPhone!.trim().isNotEmpty)
+        'merchant_phone': merchantPhone!.trim(),
       'amount': amount,
       'commission': commission,
       'note': note,
